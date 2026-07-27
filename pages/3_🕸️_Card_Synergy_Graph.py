@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
+import json
 import sys
 from pathlib import Path
 
@@ -13,6 +14,10 @@ from utils.deck_analysis import ELIXIR_COSTS, CARD_ROLES
 
 st.set_page_config(page_title="Card Synergy Graph", page_icon="🕸️", layout="wide")
 
+DATA_DIR = Path(__file__).parent.parent / "data"
+MIN_CO_OCCURRENCE = 20  # ignore real pairs seen fewer times than this (too noisy)
+
+
 @st.cache_data
 def load_data():
     df = load_playable_cards()
@@ -20,10 +25,54 @@ def load_data():
     card_types = get_card_types()
     return df, card_list, card_types
 
+
+@st.cache_data
+def load_real_synergy():
+    """Real co-occurrence/win-rate data from scripts/build_analytics_data.py, if it's
+    been run. Returns None if not -- callers fall back to the rule-based SYNERGY_PAIRS."""
+    path = DATA_DIR / "card_synergy.csv"
+    if not path.exists():
+        return None
+    df = pd.read_csv(path)
+    lookup = {}
+    for _, row in df.iterrows():
+        key = tuple(sorted((row["card_a"], row["card_b"])))
+        lookup[key] = {
+            "co_occurrence": int(row["co_occurrence"]),
+            "win_rate_together": row["win_rate_together"],
+        }
+    return lookup
+
+
+@st.cache_data
+def load_analytics_meta():
+    path = DATA_DIR / "analytics_meta.json"
+    if not path.exists():
+        return None
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
 df, card_list, card_types = load_data()
+REAL_SYNERGY = load_real_synergy()
+ANALYTICS_META = load_analytics_meta()
 
 st.title("🕸️ Card Synergy Graph")
-st.caption("Explore which cards work best together based on role complementarity and known synergies.")
+st.caption("Explore which cards work best together based on real match co-occurrence where available, falling back to curated role-based pairs otherwise.")
+
+if REAL_SYNERGY is not None and ANALYTICS_META:
+    st.info(
+        f"📊 Synergy scores marked **Data** are computed from "
+        f"{ANALYTICS_META['total_matches_sampled']:,} real matches "
+        f"({ANALYTICS_META['date_range_start'][:10]} to {ANALYTICS_META['date_range_end'][:10]}). "
+        f"Pairs marked **Rule** (including any card without match data, e.g. evolutions or "
+        f"cards added since this sample) use the curated fallback list instead."
+    )
+else:
+    st.warning(
+        "⚠️ No real match data found yet -- showing curated rule-based synergy pairs only. "
+        "Run `scripts/fetch_match_sample.py` then `scripts/build_analytics_data.py` to unlock real data."
+    )
 
 st.markdown("---")
 
@@ -108,11 +157,31 @@ SYNERGY_PAIRS = {
     ("Monk", "Giant"): 7,
 }
 
-def get_synergy_score(card_a: str, card_b: str) -> int:
-    """Get synergy score between two cards."""
+def _real_synergy_entry(card_a: str, card_b: str):
+    """Real (co_occurrence, win_rate_together) for a pair if data exists and passes
+    the minimum sample size, else None."""
+    if REAL_SYNERGY is None:
+        return None
+    entry = REAL_SYNERGY.get(tuple(sorted((card_a, card_b))))
+    if entry and entry["co_occurrence"] >= MIN_CO_OCCURRENCE:
+        return entry
+    return None
+
+
+def get_synergy_score(card_a: str, card_b: str) -> float:
+    """Get synergy score between two cards: real win-rate-together (scaled to 0-10)
+    when we have enough match data for the pair, else the curated rule-based score."""
+    real = _real_synergy_entry(card_a, card_b)
+    if real:
+        return round(real["win_rate_together"] * 10, 1)
     pair1 = (card_a, card_b)
     pair2 = (card_b, card_a)
     return SYNERGY_PAIRS.get(pair1, SYNERGY_PAIRS.get(pair2, 0))
+
+
+def get_synergy_source(card_a: str, card_b: str) -> str:
+    return "Data" if _real_synergy_entry(card_a, card_b) else "Rule"
+
 
 def get_top_synergies(card: str, top_n: int = 10) -> pd.DataFrame:
     """Get top synergy partners for a given card."""
@@ -122,9 +191,12 @@ def get_top_synergies(card: str, top_n: int = 10) -> pd.DataFrame:
             continue
         score = get_synergy_score(card, other_card)
         if score > 0:
+            real = _real_synergy_entry(card, other_card)
             results.append({
                 "Partner Card": other_card,
                 "Synergy Score": score,
+                "Source": "Data" if real else "Rule",
+                "Co-occurrences": real["co_occurrence"] if real else None,
                 "Type": card_types.get(other_card, "Troop"),
                 "Elixir": ELIXIR_COSTS.get(other_card, "?")
             })
@@ -230,7 +302,7 @@ with tab1:
                 x="Partner Card", y="Synergy Score",
                 color="Synergy Score",
                 color_continuous_scale="Oranges",
-                hover_data=["Type", "Elixir"],
+                hover_data=["Type", "Elixir", "Source", "Co-occurrences"],
                 title=f"Top Synergy Partners for {selected_card}"
             )
             fig.update_layout(height=400, showlegend=False, coloraxis_showscale=False)

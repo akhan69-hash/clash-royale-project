@@ -3,6 +3,7 @@ import numpy as np
 from pathlib import Path
 
 DATA_PATH = Path(__file__).parent.parent / "data" / "clash_royale_master_stats.csv"
+CARD_REFERENCE_PATH = Path(__file__).parent.parent / "data" / "card_reference.csv"
 
 # Cards that are sub-units or spawned troops (not directly playable)
 SUB_UNITS = {
@@ -67,3 +68,60 @@ def get_card_meta(column: str) -> dict[str, any]:
     """Map card name -> first non-null value of a column (for constant fields like Range)."""
     df = load_playable_cards()
     return df.groupby("Unit")[column].first().to_dict()
+
+
+def load_card_reference() -> pd.DataFrame:
+    """The hand-editable card_reference.csv: elixir, rarity, evolution/champion flags,
+    roles, and the match-data id (blank for cards newer than the match dataset)."""
+    df = pd.read_csv(CARD_REFERENCE_PATH, keep_default_na=False)
+    df["match_id"] = pd.to_numeric(df["match_id"], errors="coerce")
+    df["elixir"] = pd.to_numeric(df["elixir"], errors="coerce")
+    df["is_champion"] = df["is_champion"].astype(str).str.lower() == "true"
+    df["has_evolution"] = df["has_evolution"].astype(str).str.lower() == "true"
+    return df
+
+
+def get_elixir_costs() -> dict[str, int]:
+    """Map card name -> elixir cost, from card_reference.csv."""
+    ref = load_card_reference()
+    return {
+        row["card_name"]: int(row["elixir"])
+        for _, row in ref.iterrows()
+        if pd.notna(row["elixir"])
+    }
+
+
+def get_card_roles() -> dict[str, list[str]]:
+    """Map role -> list of card names, from card_reference.csv's roles column
+    (rebuilds the same shape as the old hardcoded CARD_ROLES dict)."""
+    ref = load_card_reference()
+    roles: dict[str, list[str]] = {}
+    for _, row in ref.iterrows():
+        for role in row["roles"].split(";"):
+            role = role.strip()
+            if role:
+                roles.setdefault(role, []).append(row["card_name"])
+    return roles
+
+
+def get_evolution_info() -> dict[str, dict]:
+    """Map card name -> {has_evolution, evolution_name} for cards with a known evolution."""
+    ref = load_card_reference()
+    return {
+        row["card_name"]: {
+            "has_evolution": bool(row["has_evolution"]),
+            "evolution_name": row["evolution_name"],
+        }
+        for _, row in ref.iterrows()
+        if row["has_evolution"]
+    }
+
+
+def get_card_match_id_map() -> tuple[dict[str, int], dict[int, str]]:
+    """Return (name_to_id, id_to_name) maps for cards that appear in the match dataset
+    (i.e. have a non-blank match_id in card_reference.csv)."""
+    ref = load_card_reference()
+    mapped = ref[ref["match_id"].notna()]
+    name_to_id = dict(zip(mapped["card_name"], mapped["match_id"].astype(int)))
+    id_to_name = {v: k for k, v in name_to_id.items()}
+    return name_to_id, id_to_name

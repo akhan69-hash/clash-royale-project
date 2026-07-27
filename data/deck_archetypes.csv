@@ -1,0 +1,14 @@
+cluster,deck_count,total_frequency,win_rate,avg_elixir,representative_cards,example_deck
+1,1697,631942,0.5053,3.88,Arrows;Firecracker;Mega Knight;Zap;Mini P.E.K.K.A;Hog Rider;Valkyrie;Fireball,Arrows;Fireball;Firecracker;Hog Rider;Mega Knight;Mini P.E.K.K.A;Minion;Valkyrie
+0,399,307960,0.5404,2.62,The Log;Goblins;Hog Rider;Ice Spirit;Earthquake;Firecracker;Mighty Miner;Bomb Tower,Bomb Tower;Earthquake;Firecracker;Goblins;Hog Rider;Ice Spirit;Mighty Miner;The Log
+4,294,279390,0.5404,3.62,Goblin Giant;Rage;Mini P.E.K.K.A;Sparky;Knight;Zap;Minion;Arrows,Arrows;Goblin Giant;Knight;Mini P.E.K.K.A;Minion;Rage;Sparky;Zap
+2,309,243490,0.5476,3.5,Poison;Graveyard;Tornado;Barbarian Barrel;Knight;Ice Wizard;Tombstone;Baby Dragon,Baby Dragon;Barbarian Barrel;Graveyard;Ice Wizard;Knight;Poison;Tombstone;Tornado
+12,332,223724,0.5117,2.62,The Log;Skeleton;Hog Rider;Earthquake;Firecracker;Ice Spirit;Tesla;Knight,Earthquake;Firecracker;Hog Rider;Ice Spirit;Knight;Skeleton;Tesla;The Log
+8,194,187416,0.4677,2.5,Miner;The Log;Bomb Tower;Wall Breakers;Knight;Spear Goblin;Poison;Bat,Bat;Bomb Tower;Knight;Miner;Poison;Spear Goblin;The Log;Wall Breakers
+6,399,168136,0.5129,4.75,Tornado;Lightning;Barbarian Barrel;Electro Giant;Phoenix;Golem;Firecracker;Baby Dragon,Baby Dragon;Barbarian;Barbarian Barrel;Bowler;Electro Giant;Lightning;Phoenix;Tornado
+5,301,163012,0.5349,3.38,Fisherman;Fireball;Royal Giant;Barbarian Barrel;Mother Witch;Electro Spirit;The Log;Phoenix,Barbarian Barrel;Electro Spirit;Fireball;Fisherman;Mother Witch;Phoenix;Royal Ghost;Royal Giant
+7,290,153423,0.5073,2.62,The Log;Hog Rider;Fireball;Musketeer;Cannon;Skeleton;Ice Spirit;Ice Golem,Cannon;Fireball;Hog Rider;Ice Golem;Ice Spirit;Musketeer;Skeleton;The Log
+11,165,137448,0.5336,4.12,Freeze;Tornado;Inferno Dragon;Bowler;Barbarian Barrel;Graveyard;Knight;Balloon,Baby Dragon;Barbarian Barrel;Bowler;Freeze;Graveyard;Inferno Dragon;Knight;Tornado
+9,200,114622,0.5368,4.38,Royal Hogs;Zappies;Flying Machine;Royal Recruits;Arrows;Goblin Cage;Barbarian Barrel;Fireball,Arrows;Barbarian Barrel;Fireball;Flying Machine;Goblin Cage;Royal Hogs;Royal Recruits;Zappies
+3,185,112248,0.5244,3.88,Elixir Golem;Arrows;Rage;Night Witch;Electro Dragon;Battle Healer;Skeleton King;Barbarian,Arrows;Barbarian;Battle Healer;Electro Dragon;Elixir Collector;Elixir Golem;Night Witch;Rage
+10,235,112012,0.5226,3.5,Bandit;Royal Ghost;Battle Ram;Electro Wizard;P.E.K.K.A;Magic Archer;Zap;Heal Spirit,Bandit;Battle Ram;Electro Wizard;Fireball;Magic Archer;P.E.K.K.A;Royal Ghost;Zap

@@ -1,0 +1,11 @@
+{
+  "generated_at": "2026-07-27T21:47:39.600365Z",
+  "date_range_start": "20231008T000000.000Z",
+  "date_range_end": "20231106T235959.000Z",
+  "total_matches_sampled": 18346747,
+  "gamemodes_kept": [
+    72000323,
+    72000006
+  ],
+  "source": "s1m0n38/clash-royale-games (Kaggle)"
+}

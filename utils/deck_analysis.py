@@ -1,62 +1,14 @@
 import pandas as pd
 import numpy as np
-from utils.data_loader import get_card_at_level, get_card_types, load_playable_cards
+from utils.data_loader import (
+    get_card_at_level, get_card_types, load_playable_cards,
+    get_elixir_costs, get_card_roles,
+)
 
-# Elixir costs per card (from metadata — you can extend this dict as you add more)
-# These are base elixir costs; load from metadata CSV if available
-ELIXIR_COSTS = {
-    "Tower Princess": 0, "Cannoneer": 0, "Dagger Duchess": 0, "Royal Chef": 0,
-    "Knight": 3, "Archer": 3, "Goblin": 2, "Giant": 5, "Minion": 3,
-    "Musketeer": 4, "Mini P.E.K.K.A": 4, "Fireball": 4, "Arrows": 3,
-    "Goblin Hut": 5, "Goblin Cage": 4, "Goblin Brawler": 4, "Skeleton": 1,
-    "Valkyrie": 4, "Bomber": 2, "Tombstone": 3, "Barbarian": 5,
-    "Battle Ram": 4, "Mega Minion": 3, "Cannon": 3, "Wizard": 5,
-    "Fire Spirit": 1, "Electro Spirit": 1, "Inferno Tower": 5, "Bomb Tower": 4,
-    "Hog Rider": 4, "Bat": 2, "Flying Machine": 4, "Mortar": 4,
-    "Rocket": 6, "Zap": 2, "P.E.K.K.A": 7, "Baby Dragon": 4,
-    "Guard": 3, "Goblin Barrel": 3, "Balloon": 5, "Prince": 5,
-    "Royal Recruits": 7, "Royal Hogs": 5, "Giant Skeleton": 6, "Ice Spirit": 1,
-    "Ice Golem": 2, "Battle Healer": 4, "Freeze": 4, "Lightning": 6,
-    "Giant Snowball": 2, "Dart Goblin": 3, "Goblin Gang": 3, "Skeleton Barrel": 3,
-    "Goblin Giant": 6, "Rune Giant": 5, "Berserker": 2, "Barbarian Hut": 7,
-    "Poison": 4, "Barbarian Barrel": 3, "Golem": 8, "Golemite": 0,
-    "Elite Barbarian": 6, "Hunter": 4, "Zappies": 5, "Tesla": 4,
-    "X-Bow": 6, "Furnace": 4, "Dagger Duchess": 0, "Princess": 3,
-    "Miner": 3, "Sparky": 6, "Inferno Dragon": 4, "Electro Wizard": 4,
-    "Ram Rider": 5, "Mega Knight": 7, "The Log": 2, "Royal Ghost": 3,
-    "Electro Dragon": 5, "Wall Breakers": 2, "Ice Wizard": 3, "Lumberjack": 4,
-    "Executioner": 5, "Night Witch": 4, "Elixir Golem": 4, "Goblin Drill": 4,
-    "Rage": 2, "Royal Delivery": 3, "Goblin Curse": 4, "Cannon Cart": 5,
-    "Fisherman": 3, "Mother Witch": 4, "Goblin Machine": 6, "Elixir Collector": 6,
-    "Tornado": 3, "Void": 5, "Skeleton King": 4, "Golden Knight": 4,
-    "Mighty Miner": 4, "Archer Queen": 4, "Boss Bandit": 4, "Monk": 5,
-    "Little Prince": 4, "Goblinstein": 6, "Witch": 5, "Royal Giant": 6,
-    "Dark Prince": 4, "Three Musketeers": 9, "Graveyard": 5,
-    "Spirit Empress": 6, "Heal Spirit": 1, "Firecracker": 3, "Phoenix": 4,
-    "Goblin Demolisher": 5, "Earthquake": 3, "Royal Chef": 0,
-    "Lava Hound": 7, "Bowler": 6, "Bandit": 3, "Rascals": 5,
-    "Magic Archer": 4, "Electro Giant": 7, "Suspicious Bush": 4,
-}
-
-# Card role tags for synergy analysis
-CARD_ROLES = {
-    "tank": ["Giant", "Golem", "P.E.K.K.A", "Mega Knight", "Lava Hound", "Royal Giant",
-             "Giant Skeleton", "Goblin Giant", "Electro Giant", "Rune Giant"],
-    "mini_tank": ["Knight", "Valkyrie", "Ice Golem", "Dark Prince", "Battle Healer",
-                  "Bowler", "Goblin Machine"],
-    "win_condition": ["Hog Rider", "Balloon", "Battle Ram", "Royal Hogs", "Goblin Drill",
-                      "X-Bow", "Mortar", "Miner", "Goblin Giant", "Ram Rider", "Rocket"],
-    "spell": ["Fireball", "Arrows", "Zap", "Rocket", "The Log", "Lightning", "Freeze",
-              "Poison", "Giant Snowball", "Barbarian Barrel", "Earthquake", "Tornado",
-              "Void", "Rage", "Royal Delivery", "Goblin Curse", "Goblin Barrel"],
-    "air_defense": ["Musketeer", "Mega Minion", "Inferno Tower", "Tesla", "Inferno Dragon",
-                    "Electro Dragon", "Electro Wizard", "Baby Dragon", "Minion",
-                    "Flying Machine", "Hunter", "Zappies", "Dagger Duchess"],
-    "cycle": ["Skeleton", "Goblin", "Bat", "Ice Spirit", "Electro Spirit", "Fire Spirit",
-              "Zap", "Giant Snowball", "The Log", "Arrows", "Heal Spirit"],
-    "spawner": ["Goblin Hut", "Barbarian Hut", "Tombstone", "Furnace", "Goblin Cage",
-                "Night Witch", "Witch", "Skeleton King"],
-}
+# Elixir costs and role tags now live in data/card_reference.csv (hand-editable --
+# add a row there for a new card/evolution/champion instead of touching this file).
+ELIXIR_COSTS = get_elixir_costs()
+CARD_ROLES = get_card_roles()
 
 
 def analyze_deck(cards: list[str], levels: dict[str, int]) -> dict:
