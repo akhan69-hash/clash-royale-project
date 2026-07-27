@@ -53,6 +53,14 @@ st.sidebar.markdown("---")
 st.sidebar.markdown("### Your Card Levels")
 default_level = st.sidebar.slider("Default Level", 1, 18, 11)
 
+connected_collection = st.session_state.get("connected_collection")
+use_connected_levels = False
+if connected_collection:
+    use_connected_levels = st.sidebar.checkbox(
+        f"🌐 Use my connected levels ({st.session_state.get('connected_player_name', 'loaded from Live API')})",
+        value=True,
+    )
+
 # ── Main area ─────────────────────────────────────────────────────────────────
 st.title("⚔️ Clash Royale Deck Builder")
 st.caption("Build and analyze your deck using real per-level card stats.")
@@ -81,12 +89,17 @@ with tab1:
                     key=f"card_slot_{i}"
                 )
                 if card != "— empty —":
-                    level = st.number_input(
-                        "Level",
-                        min_value=1, max_value=18,
-                        value=default_level,
-                        key=f"level_slot_{i}"
-                    )
+                    owned_level = connected_collection.get(card) if (use_connected_levels and connected_collection) else None
+                    if owned_level is not None:
+                        st.caption(f"🌐 Your level: **{owned_level}**")
+                        level = owned_level
+                    else:
+                        level = st.number_input(
+                            "Level",
+                            min_value=1, max_value=18,
+                            value=default_level,
+                            key=f"level_slot_{i}"
+                        )
                     selected_cards.append(card)
                     card_levels[card] = int(level)
 

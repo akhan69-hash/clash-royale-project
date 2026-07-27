@@ -41,14 +41,16 @@ Furnace,27000010,4,Rare,False,False,,spawner,
 Giant,26000003,5,Rare,False,False,,tank,
 Giant Skeleton,26000020,6,Epic,False,False,,tank,
 Giant Snowball,28000017,2,Common,False,False,,spell;cycle,
+Goblin Barrel,28000004,3,Epic,False,False,,win_condition,"Spawns 3 Goblins on impact, no direct damage itself; stats row = per-Goblin unit (same as Goblins card), per royaleapi/cr-api-data GoblinBarrel entry"
 Goblin Cage,27000012,4,Rare,False,False,,spawner,
 Goblin Curse,,4,Epic,False,False,,spell,Added after cr-api-data snapshot
 Goblin Demolisher,,5,Rare,False,False,,,Added after cr-api-data snapshot
 Goblin Drill,27000013,4,Epic,False,False,,win_condition,
-Goblin Giant,26000060,6,Epic,False,False,,tank;win_condition,
+Goblin Gang,26000041,3,Common,False,False,,cycle,"3 Goblins + 3 Spear Goblins (mixed unit types); stats row = per melee-Goblin unit (same as Goblins card), per royaleapi/cr-api-data GoblinGang entry"
+Goblin Giant,26000060,6,Epic,False,False,,win_condition;tank,
 Goblin Hut,27000001,5,Rare,False,False,,spawner,
 Goblin Machine,,6,Legendary,False,False,,mini_tank,Added after cr-api-data snapshot
-Goblins,26000002,2,Common,False,False,,,Elixir corrected -- old ELIXIR_COSTS dict had key "Goblin" (singular) which never matched
+Goblins,26000002,2,Common,False,False,,,
 Goblinstein,,6,Champion,True,False,,,"Newer champion, added after cr-api-data snapshot"
 Golden Knight,26000074,4,Champion,True,False,,,
 Golem,26000009,8,Epic,False,False,,tank,
@@ -74,6 +76,7 @@ Mighty Miner,26000065,4,Champion,True,False,,,
 Miner,26000032,3,Legendary,False,False,,win_condition,
 Mini P.E.K.K.A,26000018,4,Rare,False,False,,,
 Minion,26000005,3,Common,False,False,,air_defense,
+Minion Horde,26000022,5,Common,False,False,,air_defense,"6 Minions; stats row = per-Minion unit (same as Minion card), per royaleapi/cr-api-data MinionHorde entry"
 Monk,26000077,5,Champion,True,False,,,
 Mortar,27000002,4,Common,False,True,Mortar (Evolved),win_condition,
 Mother Witch,26000083,4,Legendary,False,False,,,
@@ -85,7 +88,7 @@ Poison,28000009,4,Epic,False,False,,spell,
 Prince,26000016,5,Epic,False,False,,,
 Princess,26000026,3,Legendary,False,False,,,
 Rage,28000002,2,Epic,False,False,,spell,
-Rocket,28000003,6,Rare,False,False,,win_condition;spell,
+Rocket,28000003,6,Rare,False,False,,spell;win_condition,
 Royal Chef,,0,Legendary,False,False,,,"Tower Troop, added after cr-api-data snapshot"
 Royal Delivery,28000018,3,Common,False,False,,spell,
 Royal Ghost,26000050,3,Legendary,False,False,,,
@@ -94,10 +97,11 @@ Royal Hogs,26000059,5,Rare,False,False,,win_condition,
 Royal Recruits,26000047,7,Common,False,True,Royal Recruits (Evolved),,
 Rune Giant,,5,Epic,False,False,,tank,Added after cr-api-data snapshot
 Skeleton,26000010,1,Common,False,True,Skeleton (Evolved),cycle,
+Skeleton Army,26000012,3,Epic,False,False,,,"15 Skeletons; stats row = per-Skeleton unit (same as Skeleton card), per royaleapi/cr-api-data SkeletonArmy entry"
 Skeleton Barrel,26000056,3,Common,False,False,,,
 Skeleton King,26000069,4,Champion,True,False,,spawner,
 Sparky,26000033,6,Legendary,False,False,,,
-Spear Goblin,26000019,2,Common,False,False,,,Elixir added -- missing from old ELIXIR_COSTS dict entirely
+Spear Goblin,26000019,2,Common,False,False,,,
 Spirit Empress,,6,Legendary,False,False,,,Added after cr-api-data snapshot
 Suspicious Bush,,4,Rare,False,False,,,Added after cr-api-data snapshot
 Tesla,27000006,4,Common,False,False,,air_defense,

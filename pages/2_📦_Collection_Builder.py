@@ -30,6 +30,13 @@ st.markdown("---")
 st.subheader("Your Card Levels")
 st.info("Set each card to your actual in-game level. Cards at level 0 means you don't own them yet.")
 
+connected = st.session_state.get("connected_collection")
+if connected:
+    st.success(
+        f"🌐 Connected collection available for **{st.session_state.get('connected_player_name', 'your account')}** "
+        f"({len(connected)} cards matched). Click below to load your real levels."
+    )
+
 # Group cards by type for cleaner display
 type_order = ["Troop", "Spell", "Building", "Champion"]
 type_groups = {}
@@ -43,24 +50,31 @@ for card in card_list:
 if "collection" not in st.session_state:
     st.session_state.collection = {card: 11 for card in card_list}
 
+def _set_levels(levels: dict[str, int]):
+    """Update the collection AND clear each card's number_input widget state,
+    since Streamlit widgets ignore `value=` once they've been instantiated once
+    -- without this, quick-set buttons silently no-op on subsequent clicks."""
+    for card, level in levels.items():
+        st.session_state.collection[card] = level
+        st.session_state.pop(f"collection_{card}", None)
+
 # Quick set buttons
-col1, col2, col3, col4 = st.columns(4)
+col1, col2, col3, col4, col5 = st.columns(5)
 with col1:
     if st.button("Set All to Level 11"):
-        for card in card_list:
-            st.session_state.collection[card] = 11
+        _set_levels({card: 11 for card in card_list})
 with col2:
     if st.button("Set All to Level 14"):
-        for card in card_list:
-            st.session_state.collection[card] = 14
+        _set_levels({card: 14 for card in card_list})
 with col3:
     if st.button("Set All to Max (18)"):
-        for card in card_list:
-            st.session_state.collection[card] = 18
+        _set_levels({card: 18 for card in card_list})
 with col4:
     if st.button("Reset All to 0 (Unowned)"):
-        for card in card_list:
-            st.session_state.collection[card] = 0
+        _set_levels({card: 0 for card in card_list})
+with col5:
+    if connected and st.button("🌐 Load My Connected Collection", type="primary"):
+        _set_levels({card: level for card, level in connected.items() if card in card_list})
 
 st.markdown("---")
 

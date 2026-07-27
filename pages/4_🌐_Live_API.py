@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from utils.data_loader import load_playable_cards, get_card_list, get_card_types, get_card_at_level
 from utils.deck_analysis import ELIXIR_COSTS, analyze_deck
+from utils.counter_suggester import get_counter_cards, detect_weaknesses, generate_counter_deck
 
 st.set_page_config(page_title="Live API", page_icon="🌐", layout="wide")
 
@@ -76,6 +77,7 @@ def match_api_card_to_local(api_name: str) -> str | None:
         "Goblins": "Goblins",
         "Minions": "Minion",
         "Guards": "Guard",
+        "Elite Barbarians": "Elite Barbarian",
     }
     if api_name in name_fixes:
         return name_fixes[api_name]
@@ -159,6 +161,15 @@ if st.button("🔍 Fetch Player", type="primary") and player_tag:
 
             coll_df = pd.DataFrame(collection_rows).sort_values("% to Max", ascending=False)
 
+            # Make these real levels available to every other page for this session
+            # (Deck Builder, Counter Suggester, Collection Builder) instead of a flat default.
+            st.session_state["connected_collection"] = {
+                match_api_card_to_local(row["Card"]): row["Level"]
+                for row in collection_rows
+                if match_api_card_to_local(row["Card"])
+            }
+            st.session_state["connected_player_name"] = player.get("name", "your account")
+
             col_a, col_b = st.columns(2)
             with col_a:
                 st.metric("Cards in Collection", len(api_cards))
@@ -225,6 +236,7 @@ if st.button("🔍 Fetch Player", type="primary") and player_tag:
 
         if battles:
             battle_rows = []
+            opponent_decks = []  # parallel list: mapped local card names per battle
             for battle in battles[:20]:
                 team = battle.get("team", [{}])[0]
                 opponent = battle.get("opponent", [{}])[0]
@@ -236,6 +248,9 @@ if st.button("🔍 Fetch Player", type="primary") and player_tag:
                     "Opponent": opponent.get("name", "?"),
                     "Opp Trophies": opponent.get("startingTrophies", "—"),
                 })
+                opp_cards = opponent.get("cards", [])
+                mapped = [match_api_card_to_local(c.get("name", "")) for c in opp_cards]
+                opponent_decks.append([c for c in mapped if c])
 
             battle_df = pd.DataFrame(battle_rows)
             wins = len(battle_df[battle_df["Result"] == "Win"])
@@ -244,5 +259,99 @@ if st.button("🔍 Fetch Player", type="primary") and player_tag:
 
             # Color result column
             st.dataframe(battle_df, use_container_width=True, hide_index=True)
+
+            st.markdown("---")
+
+            # ── Opponent deck picker + counter suggestions ──────────────────────
+            st.subheader("Counter an Opponent You Faced")
+            st.caption("Pick a real battle from your log to get counter suggestions for that opponent's deck.")
+
+            deck_options = [
+                f"#{i+1} — vs {row['Opponent']} ({row['Result']}, {len(opponent_decks[i])}/8 cards matched)"
+                for i, row in enumerate(battle_rows)
+                if len(opponent_decks[i]) >= 2
+            ]
+            valid_indices = [i for i in range(len(battle_rows)) if len(opponent_decks[i]) >= 2]
+
+            if deck_options:
+                choice = st.selectbox("Select a battle", deck_options)
+                chosen_i = valid_indices[deck_options.index(choice)]
+                chosen_deck = opponent_decks[chosen_i]
+
+                unmatched = len(battles[chosen_i].get("opponent", [{}])[0].get("cards", [])) - len(chosen_deck)
+                if unmatched > 0:
+                    st.caption(f"⚠️ {unmatched} card(s) in this deck couldn't be matched to our local card list and are excluded below.")
+
+                use_my_levels = st.checkbox(
+                    "Use my real card levels (from the collection above) for counter suggestions",
+                    value=True,
+                )
+                if use_my_levels:
+                    card_levels = st.session_state.get("connected_collection")
+                    default_level = 11
+                else:
+                    card_levels = None
+                    default_level = st.slider("Assume suggested cards are at level", 1, 18, 11)
+
+                col1, col2 = st.columns([1, 2])
+                with col1:
+                    st.markdown("**Opponent's Deck**")
+                    st.dataframe(
+                        pd.DataFrame({"Card": chosen_deck, "Elixir": [ELIXIR_COSTS.get(c, "?") for c in chosen_deck]}),
+                        use_container_width=True, hide_index=True
+                    )
+                    weaknesses = detect_weaknesses(chosen_deck)
+                    if weaknesses:
+                        st.markdown("**Exploitable Weaknesses:**")
+                        for w in weaknesses:
+                            st.warning(w.replace("_", " ").replace("no ", "no ").title())
+
+                with col2:
+                    counter_df = get_counter_cards(chosen_deck, top_n=12, card_levels=card_levels, default_level=default_level)
+                    if not counter_df.empty:
+                        fig = px.bar(
+                            counter_df.head(10),
+                            x="Card", y="Counter Score",
+                            color="Counter Score",
+                            color_continuous_scale="Teal",
+                            hover_data=["Type", "Elixir", "Level", "Reasons"],
+                            title="Best Counter Cards for This Opponent"
+                        )
+                        fig.update_layout(height=350, showlegend=False, coloraxis_showscale=False)
+                        st.plotly_chart(fig, use_container_width=True)
+                        st.dataframe(
+                            counter_df[["Card", "Type", "Elixir", "Level", "HP", "DPS", "Reasons"]],
+                            use_container_width=True, hide_index=True
+                        )
+
+                st.markdown("---")
+                st.subheader("🃏 Generated Counter Deck")
+                st.caption("A full 8-card deck to answer this opponent, built from your real card levels where available.")
+                deck_result = generate_counter_deck(chosen_deck, card_levels=card_levels, default_level=default_level)
+
+                if deck_result["deck"]:
+                    da = deck_result["analysis"]
+                    m1, m2, m3, m4 = st.columns(4)
+                    m1.metric("Avg Elixir", da.get("avg_elixir", "—"))
+                    m2.metric("Cycle Cost", f"{da.get('cycle_cost', '—')} elixir")
+                    m3.metric("Combined HP", f"{da.get('total_hp', 0):,}")
+                    m4.metric("Combined DPS", f"{da.get('total_dps', 0):,}")
+
+                    deck_cols = st.columns(4)
+                    for i, card in enumerate(deck_result["deck"]):
+                        with deck_cols[i % 4]:
+                            st.markdown(f"**{card}**")
+                            st.caption(f"Lvl {deck_result['levels'][card]} · {ELIXIR_COSTS.get(card, '?')} elixir")
+
+                    st.dataframe(
+                        deck_result["picks"][["Card", "Deck Role", "Level", "Elixir", "HP", "DPS", "Counter Score"]],
+                        use_container_width=True, hide_index=True
+                    )
+                    for w in da.get("warnings", []):
+                        st.warning(w)
+                else:
+                    st.info("Not enough counter data to assemble a full deck yet.")
+            else:
+                st.info("None of your recent battles had enough matchable opponent cards to suggest counters.")
         else:
             st.info("Could not fetch battle log.")

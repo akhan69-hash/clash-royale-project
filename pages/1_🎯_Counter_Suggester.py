@@ -10,6 +10,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from utils.data_loader import load_playable_cards, get_card_list, get_card_at_level, get_card_types, SUB_UNITS
 from utils.deck_analysis import ELIXIR_COSTS, CARD_ROLES, analyze_deck
+from utils.counter_suggester import (
+    HARD_COUNTERS, WEAKNESS_COUNTERS, detect_weaknesses, get_counter_cards, generate_counter_deck,
+)
 
 st.set_page_config(page_title="Counter Suggester", page_icon="🎯", layout="wide")
 
@@ -22,136 +25,6 @@ def load_data():
     return df, card_list, card_types
 
 df, card_list, card_types = load_data()
-
-# ── Counter logic ─────────────────────────────────────────────────────────────
-
-# Hard counters: card_name -> list of cards it counters well
-HARD_COUNTERS = {
-    "Zap":          ["Skeleton", "Goblin", "Bat", "Fire Spirit", "Electro Spirit", "Sparky", "Inferno Dragon", "Inferno Tower"],
-    "The Log":      ["Skeleton", "Goblin", "Bat", "Princess", "Dart Goblin", "Rascal Girl"],
-    "Arrows":       ["Minion", "Bat", "Skeleton", "Goblin", "Witch", "Night Witch"],
-    "Fireball":     ["Musketeer", "Three Musketeers", "Barbarian", "Wizard", "Witch", "Goblin Gang"],
-    "Poison":       ["Graveyard", "Goblin Barrel", "Three Musketeers", "Musketeer"],
-    "Lightning":    ["Inferno Tower", "Electro Giant", "Sparky", "Three Musketeers", "X-Bow"],
-    "Rocket":       ["X-Bow", "Mortar", "Elixir Collector", "Three Musketeers"],
-    "Tornado":      ["Hog Rider", "Battle Ram", "Goblin Giant", "Golem"],
-    "Inferno Tower":["Giant", "Golem", "P.E.K.K.A", "Mega Knight", "Lava Hound", "Balloon"],
-    "Inferno Dragon":["Giant", "Golem", "P.E.K.K.A", "Mega Knight", "Lava Hound"],
-    "Tesla":        ["Hog Rider", "Royal Hogs", "Balloon"],
-    "Cannon":       ["Hog Rider", "Royal Hogs", "Giant", "Goblin Drill"],
-    "Mini P.E.K.K.A":["Balloon", "Hog Rider", "Giant", "Golem"],
-    "Valkyrie":     ["Skeleton", "Goblin", "Bat", "Barbarian", "Witch", "Night Witch"],
-    "Bowler":       ["Skeleton Army", "Barbarian", "Goblin Gang", "Royal Recruits"],
-    "Executioner":  ["Skeleton Army", "Minion Horde", "Barbarian", "Night Witch"],
-    "Musketeer":    ["Balloon", "Lava Hound", "Baby Dragon", "Minion Horde"],
-    "Mega Minion":  ["Balloon", "Baby Dragon", "Giant", "P.E.K.K.A"],
-    "Electro Wizard":["Sparky", "Inferno Dragon", "Inferno Tower", "Lava Hound"],
-    "Electro Dragon":["Sparky", "Skeleton Army", "Goblin Gang", "Minion Horde"],
-    "Baby Dragon":  ["Skeleton Army", "Goblin Gang", "Barbarian", "Minion Horde"],
-    "Hunter":       ["Giant", "Golem", "Mega Knight", "P.E.K.K.A", "Balloon"],
-    "Knight":       ["Miner", "Goblin Barrel", "Princess", "Dart Goblin"],
-    "Dark Prince":  ["Skeleton Army", "Goblin Gang", "Barbarian", "Royal Recruits"],
-    "Ice Wizard":   ["Hog Rider", "Battle Ram", "Royal Hogs", "Giant"],
-    "Fisherman":    ["Giant", "Golem", "Balloon", "Lava Hound"],
-    "Mega Knight":  ["Skeleton Army", "Goblin Gang", "Barbarian", "Minion Horde"],
-}
-
-# Weaknesses: type of deck -> list of exploiting cards
-WEAKNESS_COUNTERS = {
-    "no_air_defense": ["Balloon", "Lava Hound", "Inferno Dragon", "Baby Dragon", "Minion Horde", "Flying Machine"],
-    "no_spell":       ["Goblin Barrel", "Skeleton Army", "Minion Horde", "Goblin Gang", "Graveyard"],
-    "high_elixir":    ["Hog Rider", "Battle Ram", "Royal Hogs", "Goblin Barrel", "Miner", "X-Bow", "Mortar"],
-    "no_tank_killer": ["Giant", "Golem", "P.E.K.K.A", "Mega Knight", "Goblin Giant"],
-    "no_swarm_clear": ["Valkyrie", "Executioner", "Bowler", "Dark Prince", "Baby Dragon"],
-    "building_heavy": ["Rocket", "Lightning", "Earthquake", "Goblin Drill", "Wall Breakers"],
-    "low_hp_cards":   ["Fireball", "Rocket", "Lightning", "Poison"],
-}
-
-def detect_weaknesses(opponent_cards: list[str]) -> list[str]:
-    """Detect weaknesses in an opponent's deck."""
-    weaknesses = []
-    opp_types = {c: card_types.get(c, "Troop") for c in opponent_cards}
-
-    # Check roles
-    opp_roles = set()
-    for card in opponent_cards:
-        for role, role_cards in CARD_ROLES.items():
-            if card in role_cards:
-                opp_roles.add(role)
-
-    if "air_defense" not in opp_roles:
-        weaknesses.append("no_air_defense")
-    if "spell" not in opp_roles:
-        weaknesses.append("no_spell")
-    if "tank" not in opp_roles and "mini_tank" not in opp_roles:
-        weaknesses.append("no_tank_killer")  # they can't stop your tanks
-    if "cycle" not in opp_roles:
-        weaknesses.append("no_swarm_clear")
-
-    # Elixir check
-    opp_elixir = [ELIXIR_COSTS.get(c, 0) for c in opponent_cards if ELIXIR_COSTS.get(c, 0) > 0]
-    if opp_elixir and np.mean(opp_elixir) >= 4.2:
-        weaknesses.append("high_elixir")
-
-    # Building heavy
-    building_count = sum(1 for c in opponent_cards if card_types.get(c) == "Building")
-    if building_count >= 2:
-        weaknesses.append("building_heavy")
-
-    return weaknesses
-
-
-def get_counter_cards(opponent_cards: list[str], top_n: int = 12) -> pd.DataFrame:
-    """Score all cards by how well they counter the opponent's deck."""
-    scores = {}
-
-    # Score from hard counters
-    for counter_card, countered_list in HARD_COUNTERS.items():
-        for opp_card in opponent_cards:
-            if opp_card in countered_list:
-                scores[counter_card] = scores.get(counter_card, 0) + 2
-
-    # Score from weakness exploitation
-    weaknesses = detect_weaknesses(opponent_cards)
-    for weakness in weaknesses:
-        for exploit_card in WEAKNESS_COUNTERS.get(weakness, []):
-            scores[exploit_card] = scores.get(exploit_card, 0) + 3
-
-    # Remove opponent's own cards from suggestions
-    for c in opponent_cards:
-        scores.pop(c, None)
-
-    # Build dataframe
-    rows = []
-    for card, score in sorted(scores.items(), key=lambda x: -x[1])[:top_n]:
-        elixir = ELIXIR_COSTS.get(card, "?")
-        card_type = card_types.get(card, "Troop")
-        row_data = get_card_at_level(card, 11)
-        hp = int(row_data["Hitpoints"]) if row_data is not None and pd.notna(row_data.get("Hitpoints")) else "—"
-        dps = round(float(row_data["DPS"]), 1) if row_data is not None and pd.notna(row_data.get("DPS")) else "—"
-
-        # Find which weakness/counter this card addresses
-        reasons = []
-        for opp_card in opponent_cards:
-            if card in HARD_COUNTERS and opp_card in HARD_COUNTERS.get(card, []):
-                reasons.append(f"Counters {opp_card}")
-        for weakness in weaknesses:
-            if card in WEAKNESS_COUNTERS.get(weakness, []):
-                label = weakness.replace("_", " ").replace("no ", "Exploits lack of ").title()
-                if label not in reasons:
-                    reasons.append(label)
-
-        rows.append({
-            "Card": card,
-            "Type": card_type,
-            "Elixir": elixir,
-            "HP (Lvl 11)": hp,
-            "DPS (Lvl 11)": dps,
-            "Counter Score": score,
-            "Reasons": ", ".join(reasons[:2]) if reasons else "General value",
-        })
-
-    return pd.DataFrame(rows)
 
 
 # ── UI ────────────────────────────────────────────────────────────────────────
@@ -179,6 +52,25 @@ if len(opponent_cards) == 0:
     st.info("Add your opponent's cards above to see counter suggestions.")
 else:
     st.markdown("---")
+
+    # ── Level source: connected API collection, or a manual default ──────────
+    connected = st.session_state.get("connected_collection")
+    st.subheader("Card Levels for Suggestions")
+    if connected:
+        use_connected = st.checkbox(
+            f"Use my connected collection levels ({st.session_state.get('connected_player_name', 'loaded from Live API')})",
+            value=True,
+        )
+    else:
+        use_connected = False
+        st.caption("💡 Connect your account on the Live API page to use your real card levels here instead of a flat default.")
+
+    if use_connected:
+        card_levels = connected
+        default_level = 11
+    else:
+        card_levels = None
+        default_level = st.slider("Assume all suggested cards are at level", 1, 18, 11)
 
     col_left, col_right = st.columns([1, 2])
 
@@ -235,7 +127,7 @@ else:
         st.subheader("Top Counter Cards")
 
         if len(opponent_cards) >= 2:
-            counter_df = get_counter_cards(opponent_cards, top_n=12)
+            counter_df = get_counter_cards(opponent_cards, top_n=12, card_levels=card_levels, default_level=default_level)
 
             if not counter_df.empty:
                 # Color by score
@@ -244,14 +136,14 @@ else:
                     x="Card", y="Counter Score",
                     color="Counter Score",
                     color_continuous_scale="Teal",
-                    hover_data=["Type", "Elixir", "Reasons"],
+                    hover_data=["Type", "Elixir", "Level", "Reasons"],
                     title="Best Counter Cards (higher = better counter)"
                 )
                 fig.update_layout(height=350, showlegend=False, coloraxis_showscale=False)
                 st.plotly_chart(fig, use_container_width=True)
 
                 st.dataframe(
-                    counter_df[["Card", "Type", "Elixir", "HP (Lvl 11)", "DPS (Lvl 11)", "Reasons"]],
+                    counter_df[["Card", "Type", "Elixir", "Level", "HP", "DPS", "Reasons"]],
                     use_container_width=True,
                     hide_index=True
                 )
@@ -259,3 +151,38 @@ else:
                 st.info("Not enough opponent cards yet to generate counters — try adding more.")
         else:
             st.info("Add at least 2 opponent cards to see counter suggestions.")
+
+    # ── Full counter deck ──────────────────────────────────────────────────────
+    if len(opponent_cards) >= 2:
+        st.markdown("---")
+        st.subheader("🃏 Generated Counter Deck")
+        st.caption("A full 8-card deck built to answer this opponent — covers key roles first, then fills with the highest-scoring remaining counters.")
+
+        result = generate_counter_deck(opponent_cards, card_levels=card_levels, default_level=default_level)
+
+        if result["deck"]:
+            deck_analysis = result["analysis"]
+            m1, m2, m3, m4 = st.columns(4)
+            m1.metric("Avg Elixir", deck_analysis.get("avg_elixir", "—"))
+            m2.metric("Cycle Cost", f"{deck_analysis.get('cycle_cost', '—')} elixir")
+            m3.metric("Combined HP", f"{deck_analysis.get('total_hp', 0):,}")
+            m4.metric("Combined DPS", f"{deck_analysis.get('total_dps', 0):,}")
+
+            deck_cols = st.columns(4)
+            for i, card in enumerate(result["deck"]):
+                with deck_cols[i % 4]:
+                    st.markdown(f"**{card}**")
+                    st.caption(f"Lvl {result['levels'][card]} · {ELIXIR_COSTS.get(card, '?')} elixir")
+
+            st.dataframe(
+                result["picks"][["Card", "Deck Role", "Level", "Elixir", "HP", "DPS", "Counter Score"]],
+                use_container_width=True, hide_index=True
+            )
+
+            missing_roles = deck_analysis.get("roles_missing", [])
+            if missing_roles:
+                st.caption(f"Roles not covered: {', '.join(missing_roles)}")
+            for w in deck_analysis.get("warnings", []):
+                st.warning(w)
+        else:
+            st.info("Not enough counter data to assemble a full deck yet.")
