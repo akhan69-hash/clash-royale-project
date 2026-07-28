@@ -13,6 +13,26 @@ SUB_UNITS = {
     "Monster (Goblinstein)", "Guardian (Little Prince)", "Goblin Machine Rocket"
 }
 
+# The official API reports each card's level relative to that card's own
+# maxLevel (e.g. a real response shows {"level": 1, "maxLevel": 5}), not an
+# absolute number -- but our stats CSV's "Level" column IS absolute (verified
+# empirically: real-world Lava Hound level-1 stats match our CSV's Level 9,
+# not Level 1, since Legendaries' lowest real level has never been "1" -- our
+# CSV extrapolates every card down to a synthetic Level 1 using the game's
+# consistent ~10%/level growth formula). CURRENT_LEVEL_CAP is the one number
+# that needs bumping whenever Supercell raises the level cap again (16 as of
+# the Nov 2025 patch) -- everything else is derived from the API's own
+# maxLevel per card, not a hardcoded rarity table.
+CURRENT_LEVEL_CAP = 16
+
+
+def api_level_to_csv_level(api_level: int, api_max_level: int) -> int:
+    """Convert a player's card level as reported by the Clash Royale API
+    (relative to that card's own maxLevel) into our stats CSV's absolute
+    1-18 Level scale, for use with get_card_at_level()/analyze_deck()."""
+    csv_level = api_level + (CURRENT_LEVEL_CAP - api_max_level)
+    return max(1, min(18, csv_level))
+
 def _load_raw() -> pd.DataFrame:
     df = pd.read_csv(DATA_PATH, low_memory=False)
     # Replace NaN strings with actual NaN

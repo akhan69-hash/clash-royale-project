@@ -9,7 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from utils.data_loader import load_playable_cards, get_card_list, get_card_types, get_card_at_level
+from utils.data_loader import load_playable_cards, get_card_list, get_card_types, get_card_at_level, api_level_to_csv_level
 from utils.deck_analysis import ELIXIR_COSTS, analyze_deck
 from utils.counter_suggester import get_counter_cards, detect_weaknesses, generate_counter_deck
 
@@ -156,15 +156,20 @@ if st.button("🔍 Fetch Player", type="primary") and player_tag:
                     "Level": level,
                     "Max Level": max_level,
                     "% to Max": round(level / max_level * 100, 1),
-                    "Levels to Max": max_level - level
+                    "Levels to Max": max_level - level,
+                    # Our stats CSV uses absolute levels (1-18); the API's "level" is
+                    # relative to that card's own maxLevel -- see api_level_to_csv_level.
+                    "CSV Level": api_level_to_csv_level(level, max_level),
                 })
 
             coll_df = pd.DataFrame(collection_rows).sort_values("% to Max", ascending=False)
 
             # Make these real levels available to every other page for this session
             # (Deck Builder, Counter Suggester, Collection Builder) instead of a flat default.
+            # Use "CSV Level" (converted), not the raw API level, since that's what
+            # get_card_at_level()/analyze_deck() expect.
             st.session_state["connected_collection"] = {
-                match_api_card_to_local(row["Card"]): row["Level"]
+                match_api_card_to_local(row["Card"]): row["CSV Level"]
                 for row in collection_rows
                 if match_api_card_to_local(row["Card"])
             }
@@ -204,7 +209,11 @@ if st.button("🔍 Fetch Player", type="primary") and player_tag:
         current_deck = player.get("currentDeck", [])
         if current_deck:
             deck_names = [c.get("name", "") for c in current_deck]
-            deck_levels = {c.get("name", ""): c.get("level", 11) for c in current_deck}
+            # Convert each card's API-relative level to our CSV's absolute scale.
+            deck_levels = {
+                c.get("name", ""): api_level_to_csv_level(c.get("level", 1), c.get("maxLevel", 14))
+                for c in current_deck
+            }
 
             local_deck = [match_api_card_to_local(n) or n for n in deck_names]
             local_levels = {match_api_card_to_local(n) or n: l for n, l in deck_levels.items()}
