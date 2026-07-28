@@ -9,7 +9,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from utils.data_loader import load_playable_cards, get_card_list, get_card_types, get_card_at_level, api_level_to_csv_level
+from utils.data_loader import (
+    load_playable_cards, get_card_list, get_card_types, get_card_at_level,
+    api_level_to_csv_level, CURRENT_LEVEL_CAP,
+)
 from utils.deck_analysis import ELIXIR_COSTS, analyze_deck
 from utils.counter_suggester import get_counter_cards, detect_weaknesses, generate_counter_deck
 
@@ -146,30 +149,34 @@ if st.button("🔍 Fetch Player", type="primary") and player_tag:
             collection_rows = []
             for api_card in api_cards:
                 name = api_card.get("name", "")
-                level = api_card.get("level", 0)
-                max_level = api_card.get("maxLevel", 14)
+                api_lvl = api_card.get("level", 0)
+                api_max = api_card.get("maxLevel", 14)
                 local_name = match_api_card_to_local(name)
+
+                # The API's raw "level"/"maxLevel" are relative to each card's own
+                # rarity track (e.g. a Legendary at its lowest real level reports
+                # level=1, maxLevel=8) -- that's NOT what the in-game client shows
+                # the player. Convert to the real displayed/absolute level (also
+                # what our stats CSV uses) for every level-related column here.
+                display_level = api_level_to_csv_level(api_lvl, api_max)
 
                 collection_rows.append({
                     "Card": name,
                     "Local Match": local_name or "—",
-                    "Level": level,
-                    "Max Level": max_level,
-                    "% to Max": round(level / max_level * 100, 1),
-                    "Levels to Max": max_level - level,
-                    # Our stats CSV uses absolute levels (1-18); the API's "level" is
-                    # relative to that card's own maxLevel -- see api_level_to_csv_level.
-                    "CSV Level": api_level_to_csv_level(level, max_level),
+                    "Level": display_level,
+                    "Max Level": CURRENT_LEVEL_CAP,
+                    "% to Max": round(display_level / CURRENT_LEVEL_CAP * 100, 1),
+                    "Levels to Max": CURRENT_LEVEL_CAP - display_level,
                 })
 
             coll_df = pd.DataFrame(collection_rows).sort_values("% to Max", ascending=False)
 
-            # Make these real levels available to every other page for this session
-            # (Deck Builder, Counter Suggester, Collection Builder) instead of a flat default.
-            # Use "CSV Level" (converted), not the raw API level, since that's what
+            # Make these real (display/absolute) levels available to every other page
+            # for this session (Deck Builder, Counter Suggester, Collection Builder)
+            # instead of a flat default -- this is also exactly what
             # get_card_at_level()/analyze_deck() expect.
             st.session_state["connected_collection"] = {
-                match_api_card_to_local(row["Card"]): row["CSV Level"]
+                match_api_card_to_local(row["Card"]): row["Level"]
                 for row in collection_rows
                 if match_api_card_to_local(row["Card"])
             }
@@ -226,7 +233,7 @@ if st.button("🔍 Fetch Player", type="primary") and player_tag:
             col3.metric("Roles Covered", len(analysis.get("roles_covered", [])))
 
             deck_df = pd.DataFrame([{
-                "Card": c.get("name"), "Level": c.get("level"),
+                "Card": c.get("name"), "Level": deck_levels.get(c.get("name")),
                 "Elixir": ELIXIR_COSTS.get(match_api_card_to_local(c.get("name","")) or "", "?")
             } for c in current_deck])
             st.dataframe(deck_df, use_container_width=True, hide_index=True)
