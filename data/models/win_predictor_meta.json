@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-27T23:25:54.700646Z",
+  "generated_at": "2026-07-28T18:20:56.423181Z",
   "card_order": [
     "Archer",
     "Archer Queen",
@@ -13,11 +13,14 @@
     "Bat",
     "Battle Healer",
     "Battle Ram",
+    "Berserker",
     "Bomb Tower",
     "Bomber",
+    "Boss Bandit",
     "Bowler",
     "Cannon",
     "Cannon Cart",
+    "Clone",
     "Dark Prince",
     "Dart Goblin",
     "Earthquake",
@@ -41,11 +44,15 @@
     "Giant Snowball",
     "Goblin Barrel",
     "Goblin Cage",
+    "Goblin Curse",
+    "Goblin Demolisher",
     "Goblin Drill",
     "Goblin Gang",
     "Goblin Giant",
     "Goblin Hut",
+    "Goblin Machine",
     "Goblins",
+    "Goblinstein",
     "Golden Knight",
     "Golem",
     "Graveyard",
@@ -61,6 +68,7 @@
     "Knight",
     "Lava Hound",
     "Lightning",
+    "Little Prince",
     "Lumberjack",
     "Magic Archer",
     "Mega Knight",
@@ -70,6 +78,7 @@
     "Mini P.E.K.K.A",
     "Minion",
     "Minion Horde",
+    "Mirror",
     "Monk",
     "Mortar",
     "Mother Witch",
@@ -81,24 +90,33 @@
     "Prince",
     "Princess",
     "Rage",
+    "Ram Rider",
+    "Rascals",
     "Rocket",
+    "Ronin",
     "Royal Delivery",
     "Royal Ghost",
     "Royal Giant",
     "Royal Hogs",
     "Royal Recruits",
+    "Rune Giant",
     "Skeleton",
     "Skeleton Army",
     "Skeleton Barrel",
+    "Skeleton Dragons",
     "Skeleton King",
     "Sparky",
     "Spear Goblin",
+    "Spirit Empress",
+    "Suspicious Bush",
     "Tesla",
     "The Log",
     "Three Musketeers",
     "Tombstone",
     "Tornado",
     "Valkyrie",
+    "Vines",
+    "Void",
     "Wall Breakers",
     "Witch",
     "Wizard",
@@ -106,8 +124,8 @@
     "Zap",
     "Zappies"
   ],
-  "n_train": 11680601,
-  "n_test": 1137909,
+  "n_train": 16054589,
+  "n_test": 2292158,
   "train_days": [
     "20231009",
     "20231101"
@@ -116,90 +134,90 @@
     "20231102",
     "20231106"
   ],
-  "accuracy": 0.5661,
-  "auc": 0.5939,
-  "log_loss": 0.6801,
+  "accuracy": 0.5685,
+  "auc": 0.597,
+  "log_loss": 0.6797,
   "baseline_accuracy": 0.5,
   "top_features": [
     {
       "card": "Valkyrie",
-      "importance": 0.0915
+      "importance": 0.0765
     },
     {
       "card": "Wizard",
-      "importance": 0.05063
+      "importance": 0.0566
     },
     {
       "card": "Barbarian Barrel",
-      "importance": 0.04184
+      "importance": 0.04618
     },
     {
-      "card": "Witch",
-      "importance": 0.03937
+      "card": "Mirror",
+      "importance": 0.03377
     },
     {
       "card": "Goblins",
-      "importance": 0.02979
+      "importance": 0.03362
     },
     {
-      "card": "Mother Witch",
-      "importance": 0.02496
-    },
-    {
-      "card": "Goblin Barrel",
-      "importance": 0.02189
+      "card": "Witch",
+      "importance": 0.03052
     },
     {
       "card": "Magic Archer",
-      "importance": 0.0218
+      "importance": 0.02479
     },
     {
-      "card": "Goblin Giant",
-      "importance": 0.02168
+      "card": "Mother Witch",
+      "importance": 0.02328
     },
     {
       "card": "Tesla",
-      "importance": 0.0187
-    },
-    {
-      "card": "Miner",
-      "importance": 0.01539
-    },
-    {
-      "card": "The Log",
-      "importance": 0.0147
-    },
-    {
-      "card": "Night Witch",
-      "importance": 0.01422
-    },
-    {
-      "card": "Graveyard",
-      "importance": 0.01407
-    },
-    {
-      "card": "Dart Goblin",
-      "importance": 0.01384
-    },
-    {
-      "card": "Bomb Tower",
-      "importance": 0.01361
-    },
-    {
-      "card": "Cannon",
-      "importance": 0.01335
-    },
-    {
-      "card": "Earthquake",
-      "importance": 0.01296
+      "importance": 0.02107
     },
     {
       "card": "Barbarian",
+      "importance": 0.01771
+    },
+    {
+      "card": "Goblin Giant",
+      "importance": 0.01571
+    },
+    {
+      "card": "Goblin Barrel",
+      "importance": 0.01483
+    },
+    {
+      "card": "Battle Ram",
+      "importance": 0.01352
+    },
+    {
+      "card": "Bomb Tower",
+      "importance": 0.01339
+    },
+    {
+      "card": "Night Witch",
+      "importance": 0.01326
+    },
+    {
+      "card": "Dart Goblin",
+      "importance": 0.01285
+    },
+    {
+      "card": "Lava Hound",
       "importance": 0.01278
     },
     {
-      "card": "Fisherman",
-      "importance": 0.01269
+      "card": "Balloon",
+      "importance": 0.01218
+    },
+    {
+      "card": "Cannon",
+      "importance": 0.01211
+    },
+    {
+      "card": "Golden Knight",
+      "importance": 0.0113
     }
   ],
   "source": "s1m0n38/clash-royale-games (Kaggle)"

@@ -1,18 +1,24 @@
 """
 One-time (rerunnable) seed script for data/card_reference.csv.
 
-Merges the existing hardcoded ELIXIR_COSTS / CARD_ROLES dicts (utils/deck_analysis.py)
-with the community-maintained royaleapi/cr-api-data card list (id, rarity, evolution
-flags) to produce a single, hand-editable CSV covering every playable card.
+Merges the existing hardcoded ELIXIR_COSTS / CARD_ROLES dicts (utils/deck_analysis.py,
+themselves now sourced from card_reference.csv -- see utils/data_loader.get_elixir_costs)
+with scripts/live_cards_reference.json -- a snapshot of the OFFICIAL Clash Royale API's
+/v1/cards response (fetched 2026-07-28 with a real developer API key) -- to produce a
+single, hand-editable CSV covering every playable card. This replaced an earlier version
+of this script that used the community-maintained royaleapi/cr-api-data snapshot, which
+had gone stale (missing 3 champions, showing only 8 cards with evolutions when the real
+game has since given nearly every card at least one evolution tier).
 
-Cards not present in cr-api-data (newer than its snapshot) get match_id left blank
-and rarity/evolution filled in from manual research recorded in MANUAL_OVERRIDES below
--- these are exactly the rows a user should revisit when a new card/evolution/champion
-ships and this script isn't rerun.
+Cards not present in the live API response (Tower Troops -- a separate mechanic not
+covered by the /cards endpoint) get match_id left blank and rarity filled in from
+MANUAL_OVERRIDES below.
 
 Run once to bootstrap the file: python scripts/build_card_reference.py
 Safe to rerun, but it will NOT preserve manual edits made directly to the CSV afterward
--- back up data/card_reference.csv first if you've hand-edited it.
+(e.g. hand-added notes) -- back up data/card_reference.csv first if you've hand-edited it.
+Elixir/roles ARE preserved across reruns since they're read back from the current CSV
+(via ELIXIR_COSTS/CARD_ROLES) rather than a separate hardcoded source.
 """
 import csv
 import json
@@ -25,10 +31,10 @@ from utils.data_loader import get_card_list
 from utils.deck_analysis import ELIXIR_COSTS, CARD_ROLES
 
 ROOT = Path(__file__).parent.parent
-CR_API_CARDS_JSON = ROOT / "scripts" / "cr_api_cards_reference.json"
+LIVE_CARDS_JSON = ROOT / "scripts" / "live_cards_reference.json"
 OUTPUT_CSV = ROOT / "data" / "card_reference.csv"
 
-# stats-CSV name -> cr-api-data name, where they differ (mostly singular/plural)
+# stats-CSV name -> live API name, where they differ (mostly singular/plural)
 NAME_ALIASES = {
     "Archer": "Archers",
     "Bat": "Bats",
@@ -40,31 +46,19 @@ NAME_ALIASES = {
     "Spear Goblin": "Spear Goblins",
 }
 
-# Cards not present in cr-api-data (newer than its snapshot). Rarity confirmed via
-# web research on 2026-07-27; evolution status confirmed false as of the same date
-# (none of these had a shipped evolution at that time) -- re-verify if it's been a while.
+# Tower Troops aren't returned by the /v1/cards endpoint (they're equipped to the
+# King Tower, not the 8-card deck) -- rarity confirmed via web research 2026-07-27.
 MANUAL_OVERRIDES = {
-    "Berserker":         {"rarity": "Common", "notes": "Added after cr-api-data snapshot"},
-    "Boss Bandit":       {"rarity": "Champion", "notes": "Newer champion, added after cr-api-data snapshot"},
-    "Goblinstein":       {"rarity": "Champion", "notes": "Newer champion, added after cr-api-data snapshot"},
-    "Little Prince":     {"rarity": "Champion", "notes": "Newer champion, added after cr-api-data snapshot"},
-    "Goblin Curse":      {"rarity": "Epic", "notes": "Added after cr-api-data snapshot"},
-    "Goblin Demolisher":  {"rarity": "Rare", "notes": "Added after cr-api-data snapshot"},
-    "Goblin Machine":    {"rarity": "Legendary", "notes": "Added after cr-api-data snapshot"},
-    "Rune Giant":        {"rarity": "Epic", "notes": "Added after cr-api-data snapshot"},
-    "Suspicious Bush":   {"rarity": "Rare", "notes": "Added after cr-api-data snapshot"},
-    "Void":              {"rarity": "Epic", "notes": "Added after cr-api-data snapshot"},
-    "Spirit Empress":    {"rarity": "Legendary", "notes": "Added after cr-api-data snapshot"},
-    "Tower Princess":    {"rarity": "Common", "notes": "Tower Troop, added after cr-api-data snapshot"},
-    "Cannoneer":         {"rarity": "Epic", "notes": "Tower Troop, added after cr-api-data snapshot"},
-    "Dagger Duchess":    {"rarity": "Legendary", "notes": "Tower Troop, added after cr-api-data snapshot"},
-    "Royal Chef":        {"rarity": "Legendary", "notes": "Tower Troop, added after cr-api-data snapshot"},
+    "Tower Princess":    {"rarity": "Common", "notes": "Tower Troop, not in the /v1/cards endpoint"},
+    "Cannoneer":         {"rarity": "Epic", "notes": "Tower Troop, not in the /v1/cards endpoint"},
+    "Dagger Duchess":    {"rarity": "Legendary", "notes": "Tower Troop, not in the /v1/cards endpoint"},
+    "Royal Chef":        {"rarity": "Legendary", "notes": "Tower Troop, not in the /v1/cards endpoint"},
 }
 
 
-def load_cr_api_cards() -> dict:
-    with open(CR_API_CARDS_JSON, encoding="utf-8") as f:
-        items = json.load(f)
+def load_live_cards() -> dict:
+    with open(LIVE_CARDS_JSON, encoding="utf-8") as f:
+        items = json.load(f)["items"]
     return {c["name"]: c for c in items}
 
 
@@ -78,31 +72,37 @@ def build_role_map() -> dict:
 
 def main():
     card_list = get_card_list()
-    cr_api_cards = load_cr_api_cards()
+    live_cards = load_live_cards()
     role_map = build_role_map()
 
     rows = []
     for card_name in card_list:
-        cr_name = NAME_ALIASES.get(card_name, card_name)
-        cr_entry = cr_api_cards.get(cr_name)
+        live_name = NAME_ALIASES.get(card_name, card_name)
+        live_entry = live_cards.get(live_name)
 
         elixir = ELIXIR_COSTS.get(card_name, "")
         roles = ";".join(role_map.get(card_name, []))
 
-        if cr_entry:
-            match_id = cr_entry["id"]
-            rarity = cr_entry["rarity"]
-            evolved_key = cr_entry.get("evolved_spells_sc_key") or ""
-            has_evolution = bool(evolved_key)
+        if live_entry:
+            match_id = live_entry["id"]
+            rarity = live_entry["rarity"].capitalize()
+            evo_tiers = live_entry.get("maxEvolutionLevel", 0)
+            has_evolution = evo_tiers >= 1
             evolution_name = f"{card_name} (Evolved)" if has_evolution else ""
+            # The live API's elixirCost is authoritative and current -- prefer it,
+            # but some cards (e.g. Mirror) have no fixed cost (dynamic: +1 over the
+            # copied card), so fall back to whatever's already in the CSV/ELIXIR_COSTS.
+            if "elixirCost" in live_entry:
+                elixir = live_entry["elixirCost"]
             notes = ""
         else:
             override = MANUAL_OVERRIDES.get(card_name, {})
             match_id = ""
             rarity = override.get("rarity", "")
+            evo_tiers = 0
             has_evolution = False
             evolution_name = ""
-            notes = override.get("notes", "No cr-api-data match -- verify rarity/evolution manually")
+            notes = override.get("notes", "Not in the live /v1/cards response -- verify rarity/evolution manually")
 
         is_champion = rarity == "Champion"
 
@@ -113,6 +113,7 @@ def main():
             "rarity": rarity,
             "is_champion": is_champion,
             "has_evolution": has_evolution,
+            "evolution_tiers": evo_tiers,
             "evolution_name": evolution_name,
             "roles": roles,
             "notes": notes,
@@ -122,7 +123,7 @@ def main():
     with open(OUTPUT_CSV, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=[
             "card_name", "match_id", "elixir", "rarity", "is_champion",
-            "has_evolution", "evolution_name", "roles", "notes",
+            "has_evolution", "evolution_tiers", "evolution_name", "roles", "notes",
         ])
         writer.writeheader()
         writer.writerows(rows)
@@ -133,7 +134,7 @@ def main():
     print(f"Wrote {len(rows)} cards to {OUTPUT_CSV}")
     print(f"  {n_matched} have a match_id (usable for match-data analytics)")
     print(f"  {len(rows) - n_matched} have no match_id (stats-only, 'no match data yet')")
-    print(f"  {n_evo} flagged has_evolution=True (from cr-api-data, likely incomplete -- verify)")
+    print(f"  {n_evo} flagged has_evolution=True (from the live API's maxEvolutionLevel)")
     print(f"  {n_champ} flagged as Champions")
 
 
