@@ -1,0 +1,8 @@
+card_name,hp_bonus_pct,notes
+Archer,25,+25% HP on top of the Power Shot ability
+Bat,50,+50% HP on top of the Healing ability (can also overheal past this via combat)
+Barbarian,10,+10% HP on top of the Anger ability
+Bomber,25,+25% HP on top of the Bouncy Bomb ability
+Skeleton Barrel,25,"+25% HP (also +64% death damage, not reflected in the HP chart)"
+Tesla,20,+20% HP on top of the Electro Pulse ability
+Royal Giant,10,+10% HP on top of the building-splash ability

@@ -5,3 +5,24 @@ __pycache__/
 .env
 .claude/
 data/raw_matches/
+cr_platform/frontend/node_modules/
+cr_platform/frontend/dist/
+cr_tools/scrape_log.json
+data/collected_battles.csv
+data/activity_log.jsonl
+# Runtime/generated artifacts -- regenerated nightly by deploy/retrain.sh or
+# by the background crawler, not hand-maintained source data. Kept off
+# GitHub both because they're derived (checking them in just creates noisy
+# diffs on every retrain) and because crawl_state.json alone is 100MB+ on
+# the real production VM -- well past what a git push comfortably handles.
+data/crawl_state.json
+data/lifetime_totals.json
+data/*_live.csv
+data/*_live.json
+data/models/*_live*.joblib
+data/models/*_live*.json
+data/card_reference.csv.bak
+# Ad-hoc local dev-server logs (uvicorn_*.log, vite_*.log, etc.) -- ~110 of
+# these had accumulated across this project's history from local restarts,
+# none ever meant to be source-controlled; deleted and ignored going forward.
+*.log

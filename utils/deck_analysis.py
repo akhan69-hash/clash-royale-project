@@ -10,6 +10,16 @@ from utils.data_loader import (
 ELIXIR_COSTS = get_elixir_costs()
 CARD_ROLES = get_card_roles()
 
+SPELL_ROLES = ("spell_small", "spell_big", "spell_utility")
+
+# Deck-completeness warnings only check these -- the full CARD_ROLES taxonomy
+# (15 tags as of the 2026-07-31 role research pass) also includes narrower
+# descriptive tags (bait, flying, building_targeted_only, spawner...) that
+# aren't "every deck needs one of these" categories, so checking coverage
+# against the full tag set would flag almost every deck for "missing" tags
+# that were never meant to be deck-completeness requirements.
+CORE_COVERAGE_ROLES = ["win_condition", "tank", "mini_tank", "air_defense", "swarm_clear", *SPELL_ROLES]
+
 
 def analyze_deck(cards: list[str], levels: dict[str, int]) -> dict:
     """
@@ -43,12 +53,16 @@ def analyze_deck(cards: list[str], levels: dict[str, int]) -> dict:
 
     # Warnings
     warnings = []
-    if "spell" not in roles_covered:
+    if not any(r in roles_covered for r in SPELL_ROLES):
         warnings.append("⚠️ No spell in deck — you can't reset Inferno Tower/Dragon or clear swarms from range.")
+    elif "spell_big" not in roles_covered:
+        warnings.append("⚠️ No big spell — you may lack reliable tower-finishing damage.")
     if "air_defense" not in roles_covered:
         warnings.append("⚠️ No air defense — you'll struggle against Balloon and Lava Hound decks.")
     if "win_condition" not in roles_covered:
         warnings.append("⚠️ No clear win condition — make sure you have a consistent way to pressure towers.")
+    if "swarm_clear" not in roles_covered:
+        warnings.append("⚠️ No swarm clear — cheap swarm decks (Skeleton Army, Minion Horde, Goblin Gang) can overwhelm you.")
     if avg_elixir > 4.5:
         warnings.append(f"⚠️ High average elixir ({avg_elixir:.1f}) — you may be outpaced in cycle decks.")
     if avg_elixir < 2.8:
@@ -70,7 +84,7 @@ def analyze_deck(cards: list[str], levels: dict[str, int]) -> dict:
         "total_hp": int(total_hp),
         "total_dps": round(total_dps, 1),
         "roles_covered": sorted(roles_covered),
-        "roles_missing": sorted(set(CARD_ROLES.keys()) - roles_covered),
+        "roles_missing": sorted(set(CORE_COVERAGE_ROLES) - roles_covered),
         "warnings": warnings,
         "elixir_costs": dict(zip(cards, elixir_costs)),
     }

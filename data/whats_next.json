@@ -1,0 +1,43 @@
+{
+  "research_date": "2026-07-31",
+  "current_season": { "number": 86, "name": "K.H.A.O.S" },
+  "note": "Hand-researched from real community news sources, not automated -- see each entry's Source link. Check the date above for freshness.",
+  "entries": [
+    {
+      "title": "Season 86 \"K.H.A.O.S\" begins August 3, 2026",
+      "category": "season",
+      "summary": "The next season starts Monday, August 3, 2026, bringing new cosmetics for Hero Valkyrie, Hero Berserker, and an Elite Barbarians Evolution skin.",
+      "source_url": "https://royaleapi.com/blog/season-86-august-2026-season-info"
+    },
+    {
+      "title": "No new Evolution or Hero in Season 86",
+      "category": "cards",
+      "summary": "For the first time in years, the upcoming season does not include a new Evolution or Hero card.",
+      "source_url": "https://royaletracker.gg/news/clash-royale-july-2026-update"
+    },
+    {
+      "title": "Season 86 work-in-progress balance changes",
+      "category": "balance",
+      "summary": "22 cards are being considered for buffs/nerfs via community polls, including Hero Goblins and Mega Knight Evolution.",
+      "source_url": "https://discuss.royaleapi.com/t/special-wip-balance-changes-for-august-2026-season-86-clash-royale-news-blog-royaleapi/49962"
+    },
+    {
+      "title": "Ronin: the first brand-new card of 2026",
+      "category": "cards",
+      "summary": "A 5-Elixir Legendary troop released in Season 85 (July 2026) -- the first entirely new card since Vines, roughly a year earlier. Signature mechanic is Parry Damage: blocks one incoming ground melee attack every 3.5 seconds and reflects the blocked damage back at the attacker.",
+      "source_url": "https://royaleapi.com/blog/ronin-new-card-july-2026?lang=en"
+    },
+    {
+      "title": "No confirmed new card after Ronin yet",
+      "category": "cards",
+      "summary": "As of this research date, there are no leaks or official announcements pointing to a specific new card beyond Ronin later in 2026 -- worth flagging honestly rather than speculating.",
+      "source_url": "https://royaleapi.com/blog/ronin-new-card-july-2026?lang=en"
+    },
+    {
+      "title": "Season 85 balance recap: 11 cards changed, Hero Tombstone reworked",
+      "category": "balance",
+      "summary": "6 nerfs (including Hero Magic Archer, the biggest hit) and 4 buffs (including Electro Giant), plus Hero Tombstone reworked into a cheaper standalone threat.",
+      "source_url": "https://royaleapi.com/blog/season-85-balance-final-july-2026?lang=en"
+    }
+  ]
+}

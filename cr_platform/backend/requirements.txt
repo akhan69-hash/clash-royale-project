@@ -1,0 +1,41 @@
+fastapi==0.140.13
+uvicorn[standard]==0.51.0
+pandas==3.0.3
+numpy==2.5.1
+httpx==0.28.1
+python-dotenv==1.2.2
+pydantic==2.13.4
+# Both required at request time by routers/ml.py's predict_win_probability
+# (lazy-loads data/models/win_predictor_live.joblib -- an XGBClassifier, so
+# xgboost itself is needed to unpickle it, not just joblib) -- previously
+# missing from this file entirely; only worked locally because the dev venv
+# also had the (separate, legacy Streamlit app's) repo-root requirements.txt
+# installed into it. Pinned to exact versions instead of the old bare `>=`
+# so a fresh production build is reproducible, not whatever happens to be
+# newest on build day.
+joblib==1.5.3
+xgboost==3.3.0
+# Real production bug (found 2026-09-01): xgboost's sklearn-compatible
+# wrapper classes (XGBRegressor/XGBClassifier -- used by
+# scripts/retrain_from_collected.py's train_deck_quality_model and
+# train_live_model) import scikit-learn internally and raise ImportError
+# without it. Missing from this file, it silently crashed every single
+# night's cron-scheduled retrain (deploy/retrain.sh) right after writing
+# card_stats_live.csv/card_synergy_live.csv, which is why every OTHER
+# derived analytics file (deck_archetypes_live.csv, deck_matchups_live.csv,
+# and 7 more) sat frozen at 2026-08-14 for two-plus weeks while the raw
+# crawled dataset kept growing underneath them.
+scikit-learn==1.7.2
+# Per-IP rate limiting -- see main.py's Limiter setup.
+slowapi==0.1.10
+# Supabase (Postgres) migration -- see supabase/schema.sql and
+# scripts/migrate_to_supabase.py. Wired into battle_collector.py's
+# save_battles/get_collection_stats/get_player_deck_history/search_players
+# (2026-08-28) -- all use Postgres directly when SUPABASE_DB_URL is set,
+# falling back to the legacy CSV+in-memory-cache path when it isn't.
+psycopg2-binary==2.9.10
+# Real user accounts (2026-09-02) -- verifies the JWT Supabase Auth issues
+# (sign-up/login/logout happen client-side via @supabase/supabase-js, never
+# through this backend) on any FUTURE route that needs to know who's asking.
+# See services/auth.py.
+pyjwt==2.11.0

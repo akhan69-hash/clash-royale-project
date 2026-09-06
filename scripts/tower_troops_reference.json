@@ -1,0 +1,40 @@
+{
+  "items": [
+    {
+      "name": "Tower Princess",
+      "id": 159000000,
+      "rarity": "common",
+      "maxLevel": 16,
+      "iconUrls": {
+        "medium": "https://api-assets.clashroyale.com/cards/300/Nzo5Gjbh7NG6O3Hyu7ev54Pu5zK7vDMR2fbpGdVsS64.png"
+      }
+    },
+    {
+      "name": "Cannoneer",
+      "id": 159000001,
+      "rarity": "epic",
+      "maxLevel": 11,
+      "iconUrls": {
+        "medium": "https://api-assets.clashroyale.com/cards/300/cUfU4UowRdbIiRvxv0ns4ezQUNndJTy7D2q4I_K_fzg.png"
+      }
+    },
+    {
+      "name": "Dagger Duchess",
+      "id": 159000002,
+      "rarity": "legendary",
+      "maxLevel": 8,
+      "iconUrls": {
+        "medium": "https://api-assets.clashroyale.com/cards/300/MVj028nMLCmBuP3HlV503uxVAxFg7jyliJVZ5JYJ1h8.png"
+      }
+    },
+    {
+      "name": "Royal Chef",
+      "id": 159000004,
+      "rarity": "legendary",
+      "maxLevel": 8,
+      "iconUrls": {
+        "medium": "https://api-assets.clashroyale.com/cards/300/CLxP2o0iX7q9peMkekI8Ki4DgWixra8L5aUbiAeBU9U.png"
+      }
+    }
+  ]
+}

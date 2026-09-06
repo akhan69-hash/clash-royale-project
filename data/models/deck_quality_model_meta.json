@@ -1,0 +1,9 @@
+{
+  "n_train": 16094,
+  "n_test": 4024,
+  "mean_absolute_error_on_holdout": 0.09165603218830781,
+  "min_frequency_for_training": 25,
+  "feature_count": 45,
+  "generated_at": "2026-08-29T01:42:07.786653+00:00",
+  "caveat": "Predicts a deck's win rate from its CARD COMPOSITION (role-tag counts, elixir curve, primary win condition, evolution/hero presence), trained only on decks with 25+ real recorded games. Meant to give a reasonable estimate for decks with too few real games to trust on their own -- always shown alongside, never in place of, the real recorded win rate and game count."
+}

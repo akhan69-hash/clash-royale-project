@@ -1,9 +1,14 @@
+from functools import lru_cache
+
 import pandas as pd
 import numpy as np
 from pathlib import Path
 
 DATA_PATH = Path(__file__).parent.parent / "data" / "clash_royale_master_stats.csv"
 CARD_REFERENCE_PATH = Path(__file__).parent.parent / "data" / "card_reference.csv"
+CARD_EVOLUTIONS_PATH = Path(__file__).parent.parent / "data" / "card_evolutions.csv"
+CARD_HEROES_PATH = Path(__file__).parent.parent / "data" / "card_heroes.csv"
+EVOLUTION_STAT_BONUS_PATH = Path(__file__).parent.parent / "data" / "evolution_stat_bonus.csv"
 
 # Cards that are sub-units or spawned troops (not directly playable)
 SUB_UNITS = {
@@ -33,7 +38,17 @@ def api_level_to_csv_level(api_level: int, api_max_level: int) -> int:
     csv_level = api_level + (CURRENT_LEVEL_CAP - api_max_level)
     return max(1, min(18, csv_level))
 
+@lru_cache(maxsize=1)
 def _load_raw() -> pd.DataFrame:
+    """Cached -- this file never changes while the server is running, but was
+    being re-read from disk and re-parsed (CSV read + numeric coercion over
+    ~30 columns) on EVERY call to get_card_types()/load_playable_cards()/etc,
+    with no caching anywhere in this module. Usually masked by being called
+    only once or twice per request; became an acute bug (2026-08-01) once
+    /decks/counter started calling detect_weaknesses() ~170 times in a single
+    request (once per candidate real deck) -- each one re-reading this CSV
+    from scratch added up to 20+ seconds, blowing past the frontend's 15s
+    axios timeout and silently failing to show any counter decks at all."""
     df = pd.read_csv(DATA_PATH, low_memory=False)
     # Replace NaN strings with actual NaN
     df.replace("NaN", np.nan, inplace=True)
@@ -56,7 +71,7 @@ def _load_raw() -> pd.DataFrame:
 
 def load_stats() -> pd.DataFrame:
     """Full stats table, all units and levels."""
-    return _load_raw()
+    return _load_raw().copy()
 
 
 def load_playable_cards() -> pd.DataFrame:
@@ -98,6 +113,8 @@ def load_card_reference() -> pd.DataFrame:
     df["elixir"] = pd.to_numeric(df["elixir"], errors="coerce")
     df["is_champion"] = df["is_champion"].astype(str).str.lower() == "true"
     df["has_evolution"] = df["has_evolution"].astype(str).str.lower() == "true"
+    if "has_hero" in df.columns:
+        df["has_hero"] = df["has_hero"].astype(str).str.lower() == "true"
     return df
 
 
@@ -134,6 +151,58 @@ def get_evolution_info() -> dict[str, dict]:
         }
         for _, row in ref.iterrows()
         if row["has_evolution"]
+    }
+
+
+def get_evolution_stat_bonus() -> dict[str, float]:
+    """Map card name -> HP bonus fraction (e.g. 0.25 for +25%) for the handful
+    of evolutions with a confirmed, quantified flat stat bonus on top of the
+    normal per-level curve (most evolutions are pure-ability, no stat change --
+    only these have a real, sourced percentage)."""
+    if not EVOLUTION_STAT_BONUS_PATH.exists():
+        return {}
+    df = pd.read_csv(EVOLUTION_STAT_BONUS_PATH)
+    return {row["card_name"]: row["hp_bonus_pct"] / 100 for _, row in df.iterrows()}
+
+
+def get_evolution_abilities() -> dict[str, dict]:
+    """Map card name -> {ability_name, ability_description, confidence} from
+    data/card_evolutions.csv. confidence is 'confirmed' (verified via web
+    research against the card's real in-game ability) or 'unconfirmed' (the
+    live API's maxEvolutionLevel confirms a real evolution exists, but no
+    reliable source for its exact ability was found -- these are a handful of
+    cards where search results kept surfacing unofficial fan concepts or a
+    different, newer 'Hero' card system instead of the actual Evolution)."""
+    if not CARD_EVOLUTIONS_PATH.exists():
+        return {}
+    df = pd.read_csv(CARD_EVOLUTIONS_PATH, keep_default_na=False)
+    return {
+        row["card_name"]: {
+            "ability_name": row["ability_name"] or None,
+            "ability_description": row["ability_description"],
+            "confidence": row["confidence"],
+        }
+        for _, row in df.iterrows()
+    }
+
+
+def get_hero_abilities() -> dict[str, dict]:
+    """Map card name -> {ability_name, ability_description, confidence} from
+    data/card_heroes.csv -- the separate, newer "Hero" upgrade system
+    (permanent unlock + its own ability, distinct from classic Evolutions;
+    disambiguated by the live API's heroMedium vs evolutionMedium icon key,
+    since maxEvolutionLevel alone doesn't tell them apart -- see
+    scripts/build_card_reference.py)."""
+    if not CARD_HEROES_PATH.exists():
+        return {}
+    df = pd.read_csv(CARD_HEROES_PATH, keep_default_na=False)
+    return {
+        row["card_name"]: {
+            "ability_name": row["ability_name"] or None,
+            "ability_description": row["ability_description"],
+            "confidence": row["confidence"],
+        }
+        for _, row in df.iterrows()
     }
 
 

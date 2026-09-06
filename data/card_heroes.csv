@@ -1,0 +1,17 @@
+card_name,hero_tiers,ability_name,ability_description,confidence
+Balloon,2,Coffin Cadets,"On activation, a Skeletrooper soars to the nearest ground enemy and deals landing damage, then keeps fighting as a melee troop on foot. Costs 2 elixir to activate.",confirmed
+Barbarian Barrel,2,Rowdy Reroll,The Barbarian barrels down the lane a second time for a repeat hit. Costs 1 elixir to activate.,confirmed
+Bowler,2,,No confirmed real ability found -- search results only surfaced unofficial fan concepts. Verify in-game.,unconfirmed
+Dark Prince,2,,No confirmed real ability found -- search results only surfaced unofficial fan concepts. Verify in-game.,unconfirmed
+Giant,2,,No confirmed real ability found -- search results kept returning the unrelated Royal Giant instead. Verify in-game.,unconfirmed
+Goblins,2,,"Evolved-form description found (likely describes this Hero ability, mislabeled during initial research): jumps onto and latches onto a target from range, dealing continuous damage for ~5 seconds before jumping off. Verify in-game.",unconfirmed
+Ice Golem,2,Snowstorm,"Conjures a blizzard around the Ice Golem: a first pulse slows nearby enemies (-30% move/hit speed) over a 4-tile radius, a second pulse knocks them back, a third freezes them for 2 seconds. ~14s cooldown. Costs 2 elixir.",confirmed
+Knight,3,,"Knight has both a classic Evolution (Shield, see card_evolutions.csv) and a Hero variant -- no separate confirmed Hero-specific ability text found. Verify in-game.",unconfirmed
+Magic Archer,2,,No confirmed real ability found -- search results only surfaced unofficial fan concepts. Verify in-game.,unconfirmed
+Mega Minion,2,Wounding Warp,Teleports to the enemy with the lowest max hitpoints and inflicts lethal (killing) damage. Costs 2 elixir to activate.,confirmed
+Mini P.E.K.K.A,2,,"On attacking, applies a Zap-like effect that deals no damage but resets charge-based cards (e.g. Sparky); on death, explodes for ~500 damage in a 3.5-tile radius. (Found during initial research, mislabeled as Evolution.)",unconfirmed
+Musketeer,3,,"Musketeer has both a classic Evolution (Long Shot, see card_evolutions.csv) and a Hero variant -- no separate confirmed Hero-specific ability text found. Verify in-game.",unconfirmed
+Tombstone,2,Regal Revival,"Tomb Queen rises from the earth in place of the Tombstone (destroying it), targets buildings, attacks continuously, and keeps spawning Skeletons while pushing forward. Costs 6 elixir to activate.",confirmed
+Wizard,3,,"Wizard has both a classic Evolution (Fire Shield, see card_evolutions.csv) and a Hero variant -- no separate confirmed Hero-specific ability text found. Verify in-game.",unconfirmed
+Valkyrie,3,Wild Whirlwind,"Costs 3 elixir to activate. Hero Valkyrie gains increased movement speed and, once she reaches a target, enters a continuous spinning-axe attack (Whirlwind Stage) lasting up to 3.5 seconds, dealing repeated area damage while reducing damage taken -- unlike Hero Berserker, she can still be damaged and defeated during the ability. Added Season 86 (Aug 2026).",confirmed
+Berserker,2,Savage Survival,"Costs 3 elixir, single-use (not a reusable cooldown). Berserker goes berserk and becomes unbeatable for a few seconds -- her spirit animal appears, hit speed increases ~200% (0.2s attack interval, the fastest in the game) and damage by ~64%, and she cannot be defeated (cannot drop below 1 HP) for the duration. Added Season 86 (Aug 2026).",confirmed

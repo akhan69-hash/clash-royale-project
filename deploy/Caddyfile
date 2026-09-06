@@ -1,0 +1,33 @@
+# Real domain, live as of 2026-08-19 -- Caddy auto-provisions and renews a
+# real Let's Encrypt certificate for both hosts the first time this config
+# loads, no other setup needed (ACME HTTP-01 challenge over port 80, which
+# docker-compose.yml already exposes).
+royaleiq.com, www.royaleiq.com {
+	encode gzip
+
+	header {
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	reverse_proxy app:8080
+}
+
+# Bare-IP / Host-less fallback (plain HTTP, no cert -- Caddy can't issue a
+# cert for a raw IP). Kept so deploy.sh's `curl http://localhost/health`
+# health check and any old bookmarks of the bare IP still work; the real
+# domain above is what's meant for actual visitors and search engines.
+:80 {
+	encode gzip
+
+	header {
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	reverse_proxy app:8080
+}

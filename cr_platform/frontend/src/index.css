@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+  /* Real feedback (2026-08-27): "make the scroll more smooth." Any
+     programmatic/anchor scroll (page-nav jumps, the card reel's own
+     .scrollBy({behavior:'smooth'}) calls, react-router's default scroll-
+     restoration) now eases instead of snapping instantly. Real mouse-wheel/
+     touch scrolling is untouched by this -- browsers already handle that
+     with their own native momentum, this only affects scrolls the app or
+     browser triggers programmatically. */
+  html { scroll-behavior: smooth; }
+  body {
+    /* Gold-led wallpaper, kept in sync with tailwind.config.js's bg.primary/
+       accent tokens -- Season 85 "Honor & Exile" red is now a small corner
+       touch rather than the dominant wash, with a royale-blue accent added
+       for the broader "Royale IQ" identity rather than one season. */
+    background-color: #120D0D;
+    background-image:
+      radial-gradient(ellipse 80% 60% at 50% -10%, rgba(212,175,55,0.09), transparent),
+      radial-gradient(ellipse 60% 50% at 100% 100%, rgba(74,111,224,0.06), transparent),
+      radial-gradient(ellipse 40% 30% at 0% 100%, rgba(194,59,59,0.05), transparent);
+    background-attachment: fixed;
+    color: #FFFFFF;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #1E1414; }
+  ::-webkit-scrollbar-thumb { background: #4A2E2E; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #6B4242; }
+}
+
+/* Most of the app's data tables only ever set vertical (py-*) padding on
+   their <th>/<td> cells, with no horizontal spacing between columns -- so
+   e.g. "Elixir" and "Win Rate" (or two right-aligned numbers) could sit
+   nearly flush against each other ("no spacing between columns on
+   different features across the app"). Rather than hunting down every
+   individual <th>/<td> className across ~8 pages, one base-layer rule
+   covers all of them at once -- Tailwind's own utility classes (the
+   handful of tables that already set an explicit px-3) still win over
+   this since utilities are emitted after @layer base in the cascade, so
+   this only fills in the ones that had nothing. first/last-child reset
+   to 0 so this doesn't also push columns away from each table's own
+   container padding at the left/right edges. */
+@layer base {
+  td, th { padding-left: 0.5rem; padding-right: 0.5rem; }
+  tr > td:first-child, tr > th:first-child { padding-left: 0; }
+  tr > td:last-child, tr > th:last-child { padding-right: 0; }
+}
+
+/* Hides the scrollbar on the swipeable Tips Carousel (TipsCarousel.tsx) --
+   it's meant to read as a deck of cards you swipe, not a normal scroll box,
+   so a visible scrollbar under it would fight that. Native scroll/momentum/
+   snap behavior is untouched, only the bar itself is hidden. */
+.scrollbar-hide { scrollbar-width: none; -ms-overflow-style: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+
+/* Mobile Safari/Chrome auto-zoom the whole page on focusing any text input
+   whose computed font-size is under 16px -- every input in this app uses
+   Tailwind's text-sm (14px), which was tripping that on the player-tag
+   search boxes ("after searching player tag on any pages, the page seems
+   to zoom in"). Fixing this once here (mobile widths only, so desktop's
+   text-sm sizing is untouched) beats hunting down every input's className.
+   Real bug found 2026-08-21: this rule alone never actually worked -- a
+   bare element selector (`input`) has LOWER CSS specificity than any class
+   selector, so Tailwind's own `.text-sm` (14px, applied directly on every
+   affected input) was silently winning regardless of source order, and the
+   zoom kept happening on a real device even after this was "fixed." The
+   !important is deliberate and narrow (mobile-only, font-size only) --
+   its whole job is to unconditionally beat whatever text-size utility a
+   component happens to use, which is exactly the cross-cutting override a
+   plain selector can't achieve here. */
+@media (max-width: 640px) {
+  input, select, textarea { font-size: 16px !important; }
+}
+
+/* Slow vertical drift for Backdrop.tsx's floating card bubbles */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-16px); }
+}

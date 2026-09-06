@@ -1,127 +1,127 @@
-card_name,match_id,elixir,rarity,is_champion,has_evolution,evolution_tiers,evolution_name,roles,notes
-Archer,26000001,3,Common,False,True,1,Archer (Evolved),,
-Archer Queen,26000072,5,Champion,True,False,0,,,
-Arrows,28000001,3,Common,False,False,0,,spell;cycle,
-Baby Dragon,26000015,4,Epic,False,True,1,Baby Dragon (Evolved),air_defense,
-Balloon,26000006,5,Epic,False,True,2,Balloon (Evolved),win_condition,
-Bandit,26000046,3,Legendary,False,False,0,,,
-Barbarian,26000008,5,Common,False,True,1,Barbarian (Evolved),,
-Barbarian Barrel,28000015,2,Epic,False,True,2,Barbarian Barrel (Evolved),spell,
-Barbarian Hut,27000005,6,Rare,False,False,0,,spawner,
-Bat,26000049,2,Common,False,True,1,Bat (Evolved),cycle,
-Battle Healer,26000068,4,Rare,False,False,0,,mini_tank,
-Battle Ram,26000036,4,Rare,False,True,1,Battle Ram (Evolved),win_condition,
-Berserker,26000102,2,Common,False,False,0,,,
-Bomb Tower,27000004,4,Rare,False,False,0,,,
-Bomber,26000013,2,Common,False,True,1,Bomber (Evolved),,
-Boss Bandit,26000103,6,Champion,True,False,0,,,
-Bowler,26000034,5,Epic,False,True,2,Bowler (Evolved),mini_tank,
-Cannon,27000000,3,Common,False,True,1,Cannon (Evolved),,
-Cannon Cart,26000054,5,Epic,False,False,0,,,
-Cannoneer,,0,Epic,False,False,0,,,"Tower Troop, not in the /v1/cards endpoint"
-Clone,28000013,3,Epic,False,False,0,,,
-Dagger Duchess,,0,Legendary,False,False,0,,air_defense,"Tower Troop, not in the /v1/cards endpoint"
-Dark Prince,26000027,4,Epic,False,True,2,Dark Prince (Evolved),mini_tank,
-Dart Goblin,26000040,3,Rare,False,True,1,Dart Goblin (Evolved),,
-Earthquake,28000014,3,Rare,False,False,0,,spell,
-Electro Dragon,26000063,5,Epic,False,True,1,Electro Dragon (Evolved),air_defense,
-Electro Giant,26000085,7,Epic,False,False,0,,tank,
-Electro Spirit,26000084,1,Common,False,False,0,,cycle,
-Electro Wizard,26000042,4,Legendary,False,False,0,,air_defense,
-Elite Barbarian,26000043,6,Common,False,False,0,,,
-Elixir Collector,27000007,6,Rare,False,False,0,,,
-Elixir Golem,26000067,3,Rare,False,False,0,,,
-Executioner,26000045,5,Epic,False,True,1,Executioner (Evolved),,
-Fire Spirit,26000031,1,Common,False,False,0,,cycle,
-Fireball,28000000,4,Rare,False,False,0,,spell,
-Firecracker,26000064,3,Common,False,True,1,Firecracker (Evolved),,
-Fisherman,26000061,3,Legendary,False,False,0,,,
-Flying Machine,26000057,4,Rare,False,False,0,,air_defense,
-Freeze,28000005,4,Epic,False,False,0,,spell,
-Furnace,27000010,4,Rare,False,True,1,Furnace (Evolved),spawner,
-Giant,26000003,5,Rare,False,True,2,Giant (Evolved),tank,
-Giant Skeleton,26000020,6,Epic,False,False,0,,tank,
-Giant Snowball,28000017,2,Common,False,True,1,Giant Snowball (Evolved),spell;cycle,
-Goblin Barrel,28000004,3,Epic,False,True,1,Goblin Barrel (Evolved),win_condition,
-Goblin Cage,27000012,4,Rare,False,True,1,Goblin Cage (Evolved),spawner,
-Goblin Curse,28000024,2,Epic,False,False,0,,spell,
-Goblin Demolisher,26000095,4,Rare,False,False,0,,,
-Goblin Drill,27000013,4,Epic,False,True,1,Goblin Drill (Evolved),win_condition,
-Goblin Gang,26000041,3,Common,False,False,0,,cycle,
-Goblin Giant,26000060,6,Epic,False,True,1,Goblin Giant (Evolved),win_condition;tank,
-Goblin Hut,27000001,4,Rare,False,False,0,,spawner,
-Goblin Machine,26000096,5,Legendary,False,False,0,,mini_tank,
-Goblins,26000002,2,Common,False,True,2,Goblins (Evolved),,
-Goblinstein,26000099,5,Champion,True,False,0,,,
-Golden Knight,26000074,4,Champion,True,False,0,,,
-Golem,26000009,8,Epic,False,False,0,,tank,
-Graveyard,28000010,5,Legendary,False,False,0,,,
-Guard,26000025,3,Epic,False,False,0,,,
-Heal Spirit,28000016,1,Rare,False,False,0,,cycle,
-Hog Rider,26000021,4,Rare,False,False,0,,win_condition,
-Hunter,26000044,4,Epic,False,True,1,Hunter (Evolved),air_defense,
-Ice Golem,26000038,2,Rare,False,True,2,Ice Golem (Evolved),mini_tank,
-Ice Spirit,26000030,1,Common,False,True,1,Ice Spirit (Evolved),cycle,
-Ice Wizard,26000023,3,Legendary,False,False,0,,,
-Inferno Dragon,26000037,4,Legendary,False,True,1,Inferno Dragon (Evolved),air_defense,
-Inferno Tower,27000003,5,Rare,False,False,0,,air_defense,
-Knight,26000000,3,Common,False,True,3,Knight (Evolved),mini_tank,
-Lava Hound,26000029,7,Legendary,False,False,0,,tank,
-Lightning,28000007,6,Epic,False,False,0,,spell,
-Little Prince,26000093,3,Champion,True,False,0,,,
-Lumberjack,26000035,4,Legendary,False,True,1,Lumberjack (Evolved),,
-Magic Archer,26000062,4,Legendary,False,True,2,Magic Archer (Evolved),,
-Mega Knight,26000055,7,Legendary,False,True,1,Mega Knight (Evolved),tank,
-Mega Minion,26000039,3,Rare,False,True,2,Mega Minion (Evolved),air_defense,
-Mighty Miner,26000065,4,Champion,True,False,0,,,
-Miner,26000032,3,Legendary,False,False,0,,win_condition,
-Mini P.E.K.K.A,26000018,4,Rare,False,True,2,Mini P.E.K.K.A (Evolved),,
-Minion,26000005,3,Common,False,False,0,,air_defense,
-Minion Horde,26000022,5,Common,False,True,1,Minion Horde (Evolved),air_defense,
-Mirror,28000006,,Epic,False,False,0,,,
-Monk,26000077,5,Champion,True,False,0,,,
-Mortar,27000002,4,Common,False,True,1,Mortar (Evolved),win_condition,
-Mother Witch,26000083,4,Legendary,False,False,0,,,
-Musketeer,26000014,4,Rare,False,True,3,Musketeer (Evolved),air_defense,
-Night Witch,26000048,4,Legendary,False,False,0,,spawner,
-P.E.K.K.A,26000004,7,Epic,False,True,1,P.E.K.K.A (Evolved),tank,
-Phoenix,26000087,4,Legendary,False,False,0,,,
-Poison,28000009,4,Epic,False,False,0,,spell,
-Prince,26000016,5,Epic,False,False,0,,,
-Princess,26000026,3,Legendary,False,True,1,Princess (Evolved),,
-Rage,28000002,2,Epic,False,False,0,,spell,
-Ram Rider,26000051,5,Legendary,False,False,0,,,
-Rascals,26000053,5,Common,False,False,0,,,
-Rocket,28000003,6,Rare,False,False,0,,spell;win_condition,
-Ronin,26000106,5,Legendary,False,False,0,,,
-Royal Chef,,0,Legendary,False,False,0,,,"Tower Troop, not in the /v1/cards endpoint"
-Royal Delivery,28000018,3,Common,False,False,0,,spell,
-Royal Ghost,26000050,3,Legendary,False,True,1,Royal Ghost (Evolved),,
-Royal Giant,26000024,6,Common,False,True,1,Royal Giant (Evolved),tank,
-Royal Hogs,26000059,5,Rare,False,True,1,Royal Hogs (Evolved),win_condition,
-Royal Recruits,26000047,7,Common,False,True,1,Royal Recruits (Evolved),,
-Rune Giant,26000101,4,Epic,False,False,0,,tank,
-Skeleton,26000010,1,Common,False,True,1,Skeleton (Evolved),cycle,
-Skeleton Army,26000012,3,Epic,False,True,1,Skeleton Army (Evolved),,
-Skeleton Barrel,26000056,3,Common,False,True,1,Skeleton Barrel (Evolved),,
-Skeleton Dragons,26000080,4,Common,False,False,0,,,
-Skeleton King,26000069,4,Champion,True,False,0,,spawner,
-Sparky,26000033,6,Legendary,False,False,0,,,
-Spear Goblin,26000019,2,Common,False,False,0,,,
-Spirit Empress,28000025,6,Legendary,False,False,0,,,
-Suspicious Bush,26000097,2,Rare,False,False,0,,,
-Tesla,27000006,4,Common,False,True,1,Tesla (Evolved),air_defense,
-The Log,28000011,2,Legendary,False,False,0,,spell;cycle,
-Three Musketeers,26000028,9,Rare,False,False,0,,,
-Tombstone,27000009,3,Rare,False,True,2,Tombstone (Evolved),spawner,
-Tornado,28000012,3,Epic,False,False,0,,spell,
-Tower Princess,,0,Common,False,False,0,,,"Tower Troop, not in the /v1/cards endpoint"
-Valkyrie,26000011,4,Rare,False,True,1,Valkyrie (Evolved),mini_tank,
-Vines,28000026,3,Epic,False,False,0,,,
-Void,28000023,3,Epic,False,False,0,,spell,
-Wall Breakers,26000058,2,Epic,False,True,1,Wall Breakers (Evolved),,
-Witch,26000007,5,Epic,False,True,1,Witch (Evolved),spawner,
-Wizard,26000017,5,Rare,False,True,3,Wizard (Evolved),,
-X-Bow,27000008,6,Epic,False,False,0,,win_condition,
-Zap,28000008,2,Common,False,True,1,Zap (Evolved),spell;cycle,
-Zappies,26000052,4,Rare,False,False,0,,air_defense,
+card_name,match_id,elixir,rarity,is_champion,has_evolution,evolution_tiers,evolution_name,has_hero,hero_tiers,hero_name,roles,role_confidence,notes
+Archer,26000001.0,3.0,Common,False,True,1,Archer (Evolved),False,0,,air_defense;support_ranged,confirmed,"Archers hit air+ground, 5-tile range backline DPS"
+Archer Queen,26000072.0,5.0,Champion,True,False,0,,False,0,,support_ranged;air_defense;swarm_clear,confirmed,"Ranged Champion, cloak ability boosts speed and splashes swarms"
+Arrows,28000001.0,3.0,Common,False,False,0,,False,0,,spell_small;swarm_clear,confirmed,"3-elixir spell that wipes Skeleton Army, Goblin Gang, Minion Horde"
+Baby Dragon,26000015.0,4.0,Epic,False,True,1,Baby Dragon (Evolved),False,0,,flying;air_defense;swarm_clear,confirmed,"Airborne splash troop; clears swarms, hits air+ground"
+Balloon,26000006.0,5.0,Epic,False,False,0,,True,2,Hero Balloon,win_condition;building_targeted_only;flying,confirmed,"Airborne, building-only attacker; main tower-damage win condition"
+Bandit,26000046.0,3.0,Legendary,False,False,0,,False,0,,tank_killer,unconfirmed,"Dash burst mainly snipes squishy/support troops, not true tanks"
+Barbarian,26000008.0,5.0,Common,False,True,1,Barbarian (Evolved),False,0,,mini_tank,confirmed,"Classic mini-tank, ground-only melee"
+Barbarian Barrel,28000015.0,2.0,Epic,False,False,0,,True,2,Hero Barbarian Barrel,spell_small;swarm_clear,confirmed,"2-elixir rolling spell clears swarms, then spawns a Barbarian"
+Barbarian Hut,27000005.0,6.0,Rare,False,False,0,,False,0,,spawner,confirmed,7-elixir building spawning paired Barbarians for lane pressure
+Bat,26000049.0,2.0,Common,False,True,1,Bat (Evolved),False,0,,flying;air_defense;cycle,confirmed,"2-elixir flying swarm; melee air/ground hits, cheap deck-cycling"
+Battle Healer,26000068.0,4.0,Rare,False,False,0,,False,0,,mini_tank,confirmed,Melee mini-tank that heals herself and nearby troops each attack
+Battle Ram,26000036.0,4.0,Rare,False,True,1,Battle Ram (Evolved),False,0,,building_targeted_only;win_condition,confirmed,Building-only charger breaking into Barbarians; bridge-spam win condition
+Berserker,26000102.0,2.0,Common,False,False,0,,True,2,Hero Berserker,mini_tank;swarm_clear,unconfirmed,"832 HP, 0.5s hit speed; explicitly good vs small swarms/medium troops (Gamerant/StatsRoyale)"
+Bomb Tower,27000004.0,4.0,Rare,False,False,0,,False,0,,swarm_clear,confirmed,Defensive building whose splash damage shreds ground swarms; no air
+Bomber,26000013.0,2.0,Common,False,True,1,Bomber (Evolved),False,0,,swarm_clear;cycle,confirmed,"2-elixir splash troop, excellent vs ground swarms, cheap to recycle"
+Boss Bandit,26000103.0,6.0,Champion,True,False,0,,False,0,,mini_tank,confirmed,"High-HP dash/teleport Champion, functions as mini-tank"
+Bowler,26000034.0,5.0,Epic,False,False,0,,True,2,Hero Bowler,swarm_clear;mini_tank,confirmed,"Slow knockback splash shot denies ground swarms, high HP"
+Cannon,27000000.0,3.0,Common,False,True,1,Cannon (Evolved),False,0,,tank_killer,unconfirmed,"Ground-only defensive building vs single melee threats; no air, no splash"
+Cannon Cart,26000054.0,5.0,Epic,False,False,0,,False,0,,mini_tank;tank_killer,confirmed,"Mobile shielded cannon, high single-target DPS melts tanks"
+Cannoneer,,0.0,Epic,False,False,0,,False,0,,,confirmed,"Tower Troop (King Tower skin), not a deck card"
+Clone,28000013.0,3.0,Epic,False,False,0,,False,0,,spell_utility,confirmed,3-elixir spell duplicates friendly troops as fragile 1-HP copies
+Dagger Duchess,,0.0,Legendary,False,False,0,,False,0,,,confirmed,"Tower Troop (King Tower skin), not a deck card"
+Dark Prince,26000027.0,4.0,Epic,False,False,0,,True,2,Hero Dark Prince,mini_tank;swarm_clear,confirmed,"Shielded charger dealing 360 area damage, high HP frontline troop"
+Dart Goblin,26000040.0,3.0,Rare,False,True,1,Dart Goblin (Evolved),False,0,,support_ranged;air_defense;bait,confirmed,Long-range 6.5-tile sniper behind tanks; Log Bait deck staple
+Earthquake,28000014.0,3.0,Rare,False,False,0,,False,0,,spell_small;spell_utility,confirmed,"3-elixir spell: bonus building damage, slows troops; tower chip"
+Electro Dragon,26000063.0,5.0,Epic,False,True,1,Electro Dragon (Evolved),False,0,,flying;air_defense;swarm_clear,confirmed,"Flying chain-lightning splash troop; stuns/clears swarms, hits air"
+Electro Giant,26000085.0,7.0,Epic,False,False,0,,False,0,,win_condition;tank;building_targeted_only,confirmed,"8-elixir beatdown tank, building-only, reflects zap damage to attackers"
+Electro Spirit,26000084.0,1.0,Common,False,False,0,,False,0,,cycle;air_defense;swarm_clear,confirmed,"1-elixir troop, chain-stuns up to 8 targets including air"
+Electro Wizard,26000042.0,4.0,Legendary,False,False,0,,False,0,,support_ranged;air_defense,confirmed,"Ranged stun support troop, hits 2 targets, air-targeting"
+Elite Barbarian,26000043.0,6.0,Common,False,False,0,,False,0,,win_condition;tank_killer;mini_tank,confirmed,Two fast high-damage troops; ground tank killers/win condition
+Elixir Collector,27000007.0,6.0,Rare,False,False,0,,False,0,,,confirmed,Pure resource building generating elixir; no fixed tag fits it
+Elixir Golem,26000067.0,3.0,Rare,False,False,0,,False,0,,tank;building_targeted_only,confirmed,High-HP building-only troop that splits into golemites on death
+Executioner,26000045.0,5.0,Epic,False,True,1,Executioner (Evolved),False,0,,swarm_clear;air_defense,confirmed,"Boomerang axe splash hits air+ground twice, counters swarms"
+Fire Spirit,26000031.0,1.0,Common,False,False,0,,False,0,,cycle;air_defense;swarm_clear,confirmed,1-elixir suicide splash troop hitting air+ground; wipes cheap swarms
+Fireball,28000000.0,4.0,Rare,False,False,0,,False,0,,spell_big,confirmed,"4-elixir medium-radius spell, heavy damage, chips or finishes towers"
+Firecracker,26000064.0,3.0,Common,False,True,1,Firecracker (Evolved),False,0,,support_ranged;air_defense;swarm_clear,confirmed,"6-range shrapnel splash hits air+ground, recoils after each shot"
+Fisherman,26000061.0,3.0,Legendary,False,False,0,,False,0,,support_ranged,unconfirmed,"Melee troop with 7-tile hook pull; utility card, no clean tag"
+Flying Machine,26000057.0,4.0,Rare,False,False,0,,False,0,,flying;air_defense;support_ranged,confirmed,"Flying ranged troop, hits air+ground, supports pushes from behind"
+Freeze,28000005.0,4.0,Epic,False,False,0,,False,0,,spell_utility,confirmed,"4-elixir spell stuns enemies 4s, low damage, defensive reset tool"
+Furnace,27000010.0,4.0,Rare,False,True,1,Furnace (Evolved),False,0,,spawner;air_defense;support_ranged,confirmed,Reworked into ranged troop hitting air + spawns Fire Spirits
+Giant,26000003.0,5.0,Rare,False,False,0,,True,2,Hero Giant,win_condition;tank;building_targeted_only,confirmed,High-HP building-only tank; classic beatdown win condition
+Giant Skeleton,26000020.0,6.0,Epic,False,False,0,,False,0,,tank,confirmed,"Very high-HP frontline troop, drops death bomb on defeat"
+Giant Snowball,28000017.0,2.0,Common,False,True,1,Giant Snowball (Evolved),False,0,,spell_small;swarm_clear;spell_utility,confirmed,"2-elixir spell; knocks back, slows, and wipes weak swarms"
+Goblin Barrel,28000004.0,3.0,Epic,False,True,1,Goblin Barrel (Evolved),False,0,,win_condition;bait,confirmed,3 Goblins dropped near tower; core Log Bait win condition
+Goblin Cage,27000012.0,4.0,Rare,False,True,1,Goblin Cage (Evolved),False,0,,bait;spawner,unconfirmed,Baits building-targeting troops; releases Goblin Brawler once destroyed/expired
+Goblin Curse,28000024.0,2.0,Epic,False,False,0,,False,0,,spell_small;spell_utility,confirmed,2-elixir DOT spell converts dying troops into stat Goblins
+Goblin Demolisher,26000095.0,4.0,Rare,False,False,0,,False,0,,win_condition;swarm_clear,confirmed,"Area-damage ranged siege troop, charges buildings below 50% HP"
+Goblin Drill,27000013.0,4.0,Epic,False,True,1,Goblin Drill (Evolved),False,0,,win_condition;spawner,confirmed,"Underground building deployed anywhere, spawns Goblins, chips tower"
+Goblin Gang,26000041.0,3.0,Common,False,False,0,,False,0,,bait;air_defense,confirmed,Baits Log/Arrows; Spear Goblins inside can hit air units
+Goblin Giant,26000060.0,6.0,Epic,False,True,1,Goblin Giant (Evolved),False,0,,tank;win_condition;building_targeted_only,confirmed,High-HP building-only tank carrying two Spear Goblins
+Goblin Hut,27000001.0,4.0,Rare,False,False,0,,False,0,,spawner,confirmed,Building spawning Spear Goblins roughly every 5 seconds
+Goblin Machine,26000096.0,5.0,Legendary,False,False,0,,False,0,,tank;win_condition,confirmed,"High-HP melee/rocket hybrid, tanks while chipping the tower"
+Goblins,26000002.0,2.0,Common,False,False,0,,True,2,Hero Goblins,cycle;bait,confirmed,Four 2-elixir melee units; cheap cycle card that baits spells
+Goblinstein,26000099.0,5.0,Champion,True,False,0,,False,0,,tank;building_targeted_only;support_ranged,confirmed,Champion spawns building-only tank Monster plus ranged stunning Doctor
+Golden Knight,26000074.0,4.0,Champion,True,False,0,,False,0,,win_condition;mini_tank;swarm_clear,confirmed,Champion dashes through/chains up to 10 troops
+Golem,26000009.0,8.0,Epic,False,False,0,,False,0,,tank;win_condition;building_targeted_only,confirmed,Massive-HP building-only tank; splits into Golemites on death
+Graveyard,28000010.0,5.0,Legendary,False,False,0,,False,0,,win_condition;spell_big,confirmed,5-elixir legendary spell spawning skeletons at tower; chip win condition
+Guard,26000025.0,3.0,Epic,False,False,0,,False,0,,bait;mini_tank,confirmed,"3 shielded units bait Zap/Log/Poison, briefly soak hits"
+Heal Spirit,28000016.0,1.0,Rare,False,False,0,,False,0,,cycle,confirmed,1-elixir troop that heals nearby troops; cheap cycling tool
+Hog Rider,26000021.0,4.0,Rare,False,False,0,,False,0,,win_condition;building_targeted_only,confirmed,"Fast building-only tower rusher, staple of cycle win decks"
+Hunter,26000044.0,4.0,Epic,False,True,1,Hunter (Evolved),False,0,,tank_killer;swarm_clear,confirmed,"Short-range shotgun troop; melts tanks up close, splashes groups"
+Ice Golem,26000038.0,2.0,Rare,False,False,0,,True,2,Hero Ice Golem,mini_tank;building_targeted_only;cycle,confirmed,"Cheap building-only mini-tank; explodes, slowing enemies on death"
+Ice Spirit,26000030.0,1.0,Common,False,True,1,Ice Spirit (Evolved),False,0,,cycle;air_defense,confirmed,"1-elixir stun troop hitting air+ground, cheap cycling utility"
+Ice Wizard,26000023.0,3.0,Legendary,False,False,0,,False,0,,support_ranged;air_defense;swarm_clear,confirmed,Ranged splash troop that slows enemies; defends air and clears swarms
+Inferno Dragon,26000037.0,4.0,Legendary,False,True,1,Inferno Dragon (Evolved),False,0,,tank_killer;flying;air_defense,confirmed,"Ramping single-target beam melts tanks; airborne, air-targeting"
+Inferno Tower,27000003.0,5.0,Rare,False,False,0,,False,0,,air_defense;tank_killer,confirmed,"Building, ramping damage over time, melts tanks; hits air and ground"
+Knight,26000000.0,3.0,Common,False,True,3,Knight (Evolved),True,3,Hero Knight,mini_tank,confirmed,"Cheap 3-elixir all-rounder, widely ranked among best mini-tanks"
+Lava Hound,26000029.0,7.0,Legendary,False,False,0,,False,0,,tank;flying;building_targeted_only,confirmed,"Only flying tank, targets buildings only, shields air beatdown"
+Lightning,28000007.0,6.0,Epic,False,False,0,,False,0,,spell_big,confirmed,"6-elixir spell hits/stuns 3 highest-HP targets, sniping/finishing"
+Little Prince,26000093.0,3.0,Champion,True,False,0,,False,0,,support_ranged;air_defense,confirmed,"Ranged Champion hits air+ground, summons tanky Guardian ally"
+Lumberjack,26000035.0,4.0,Legendary,False,True,1,Lumberjack (Evolved),False,0,,mini_tank;spell_utility,confirmed,Fast high-HP/damage troop; spawns a Rage spell on death
+Magic Archer,26000062.0,4.0,Legendary,False,False,0,,True,2,Hero Magic Archer,support_ranged;air_defense,confirmed,"Piercing arrow line-damage, placed behind tanks for backline support"
+Mega Knight,26000055.0,7.0,Legendary,False,True,1,Mega Knight (Evolved),False,0,,tank;swarm_clear,confirmed,High-HP splash tank; 360 landing hit plus jump attack clears swarms
+Mega Minion,26000039.0,3.0,Rare,False,False,0,,True,2,Hero Mega Minion,flying;air_defense;support_ranged,confirmed,Flying support troop hitting air and ground; strong defense behind tanks
+Mighty Miner,26000065.0,4.0,Champion,True,False,0,,False,0,,win_condition;tank_killer;tank,confirmed,Champion that digs to swap lanes; ramping damage melts tanks
+Miner,26000032.0,3.0,Legendary,False,False,0,,False,0,,win_condition,confirmed,"Tunnels to any tile for guaranteed, unpredictable tower chip damage"
+Mini P.E.K.K.A,26000018.0,4.0,Rare,False,False,0,,True,2,Hero Mini P.E.K.K.A,tank_killer;mini_tank,confirmed,"Slow single-target melee; melts tanks, can briefly front-tank"
+Minion,26000005.0,3.0,Common,False,False,0,,False,0,,flying;air_defense;support_ranged,confirmed,"3 flying gargoyles, short-range, hit air and ground"
+Minion Horde,26000022.0,5.0,Common,False,True,1,Minion Horde (Evolved),False,0,,flying;air_defense;bait,confirmed,"6 flying minions, huge DPS; explicitly a multi-spell bait card"
+Mirror,28000006.0,,Epic,False,False,0,,False,0,,spell_utility,confirmed,Replays player's last card at +1 elixir and +1 level
+Monk,26000077.0,5.0,Champion,True,False,0,,False,0,,mini_tank,unconfirmed,"Melee Champion reflects projectile spells, decently tanky frontline unit"
+Mortar,27000002.0,4.0,Common,False,True,1,Mortar (Evolved),False,0,,win_condition;swarm_clear,confirmed,Long-range splash siege building; chip-damage win condition
+Mother Witch,26000083.0,4.0,Legendary,False,False,0,,False,0,,support_ranged;air_defense;swarm_clear,confirmed,4-elixir ranged support hitting air/ground; curses foes into Hogs
+Musketeer,26000014.0,4.0,Rare,False,True,3,Musketeer (Evolved),True,3,Hero Musketeer,support_ranged;air_defense,confirmed,"Versatile ranged single-target DPS support troop, hits air+ground"
+Night Witch,26000048.0,4.0,Legendary,False,False,0,,False,0,,spawner;mini_tank;air_defense,confirmed,Melee troop periodically spawning Bats (hit air too); solid mini-tank support
+P.E.K.K.A,26000004.0,7.0,Epic,False,True,1,P.E.K.K.A (Evolved),False,0,,tank;tank_killer,confirmed,High-HP frontline tank and specialist tank-killer vs heavy tanks
+Phoenix,26000087.0,4.0,Legendary,False,False,0,,False,0,,flying;air_defense,confirmed,"Flying troop hits air+ground, respawns from egg after death"
+Poison,28000009.0,4.0,Epic,False,False,0,,False,0,,swarm_clear;spell_big,confirmed,"4-elixir area spell, damage over 8s, slows enemies 15%"
+Prince,26000016.0,5.0,Epic,False,False,0,,False,0,,win_condition;mini_tank;tank_killer,confirmed,Charging deals double damage; mini-tank/tank-killer win condition
+Princess,26000026.0,3.0,Legendary,False,True,1,Princess (Evolved),False,0,,bait;support_ranged;air_defense,confirmed,"Very long range splash siege/bait unit, baits Log/Zap"
+Rage,28000002.0,2.0,Epic,False,False,0,,False,0,,spell_utility,confirmed,2-elixir potion buffs ally speed/attack speed 30%
+Ram Rider,26000051.0,5.0,Legendary,False,False,0,,False,0,,win_condition;building_targeted_only,confirmed,Building-only charger troop; primary win condition
+Rascals,26000053.0,5.0,Common,False,False,0,,False,0,,mini_tank;support_ranged;bait,confirmed,Boy mini-tanks while two Rascal Girls give ranged support; often baits spells
+Rocket,28000003.0,6.0,Rare,False,False,0,,False,0,,spell_big,confirmed,"6-elixir spell, highest dmg/elixir vs towers, finishes weak towers"
+Ronin,26000106.0,5.0,Legendary,False,False,0,,False,0,,mini_tank;tank_killer,confirmed,"New Season 85 card; parries melee hits back doubled; fronts pushes, melts tanks"
+Royal Chef,,0.0,Legendary,False,False,0,,False,0,,,confirmed,"Tower Troop (King Tower skin), not a deck card"
+Royal Delivery,28000018.0,3.0,Common,False,False,0,,False,0,,spell_small;swarm_clear;mini_tank,confirmed,"3-elixir spell hits troops, then drops a Royal Recruit mini-tank"
+Royal Ghost,26000050.0,3.0,Legendary,False,True,1,Royal Ghost (Evolved),False,0,,mini_tank;swarm_clear,confirmed,"Invisible melee troop; area damage tanks briefly, wipes grouped enemies"
+Royal Giant,26000024.0,6.0,Common,False,True,1,Royal Giant (Evolved),False,0,,win_condition;building_targeted_only,confirmed,"6-elixir ranged, building-only win condition that outranges defenses"
+Royal Hogs,26000059.0,5.0,Rare,False,True,1,Royal Hogs (Evolved),False,0,,win_condition;building_targeted_only,confirmed,"4 fast hogs, building-only targeting, jump river"
+Royal Recruits,26000047.0,7.0,Common,False,True,1,Royal Recruits (Evolved),False,0,,win_condition;mini_tank,confirmed,Six shielded troops split both lanes; alternate win condition
+Rune Giant,26000101.0,4.0,Epic,False,False,0,,False,0,,win_condition;tank;building_targeted_only,confirmed,Building-only Giant variant that buffs two nearby troops' damage
+Skeleton,26000010.0,1.0,Common,False,True,1,Skeleton (Evolved),False,0,,cycle,confirmed,"1-elixir distraction/cycle troop, easily cycles decks fast"
+Skeleton Army,26000012.0,3.0,Epic,False,True,1,Skeleton Army (Evolved),False,0,,bait,confirmed,15 skeletons; classic bait for opponent's Zap/Log/Arrows
+Skeleton Barrel,26000056.0,3.0,Common,False,True,1,Skeleton Barrel (Evolved),False,0,,win_condition;building_targeted_only;flying,confirmed,"Airborne, building-only win condition chipping towers"
+Skeleton Dragons,26000080.0,4.0,Common,False,False,0,,False,0,,flying;swarm_clear;bait,confirmed,"Two flying splash troops, strong vs swarms, often bait spells"
+Skeleton King,26000069.0,4.0,Champion,True,False,0,,False,0,,tank;spawner;swarm_clear,confirmed,Champion tank with splash attacks; ability spawns skeleton swarms
+Sparky,26000033.0,6.0,Legendary,False,False,0,,False,0,,tank_killer;swarm_clear,confirmed,Huge splash-radius shot melts tanks and wipes groups
+Spear Goblin,26000019.0,2.0,Common,False,False,0,,False,0,,cycle;bait;support_ranged,confirmed,Cheap ranged support/cycle card; commonly baits Zap or Log
+Spirit Empress,28000025.0,6.0,Legendary,False,False,0,,False,0,,flying;support_ranged,confirmed,Dual-mode Legendary: cheap ground melee or costlier flying ranged support
+Suspicious Bush,26000097.0,2.0,Rare,False,False,0,,False,0,,building_targeted_only;cycle;bait,confirmed,"Invisible 2-elixir troop targets buildings, spawns Goblins, baits spells"
+Tesla,27000006.0,4.0,Common,False,True,1,Tesla (Evolved),False,0,,air_defense;tank_killer,confirmed,"Hidden building; hits air+ground, strong sustained DPS vs tanks/mini-tanks"
+The Log,28000011.0,2.0,Legendary,False,False,0,,False,0,,spell_small;swarm_clear,confirmed,2-elixir rolling knockback spell; clears ground swarms cheaply
+Three Musketeers,26000028.0,9.0,Rare,False,False,0,,False,0,,win_condition;support_ranged,confirmed,"9-elixir triple ranged troop, split-lane pressure win condition"
+Tombstone,27000009.0,3.0,Rare,False,False,0,,True,2,Hero Tombstone,spawner,confirmed,"Building passively spawns Skeletons every 3.5s, more on death"
+Tornado,28000012.0,3.0,Epic,False,False,0,,False,0,,spell_utility,confirmed,Pulls troops to a point with minor dmg; anti-swarm utility spell
+Tower Princess,,0.0,Common,False,False,0,,False,0,,,confirmed,"Tower Troop (King Tower skin), not a deck card"
+Valkyrie,26000011.0,4.0,Rare,False,True,3,Valkyrie (Evolved),True,3,Hero Valkyrie,mini_tank;swarm_clear,confirmed,360 spin splash; mini-tank that shreds Skeleton Army/Goblin Gang
+Vines,28000026.0,3.0,Epic,False,False,0,,False,0,,spell_small;spell_utility,confirmed,"3-elixir spell roots up to 3 high-HP targets, deals damage over time"
+Void,28000023.0,3.0,Epic,False,False,0,,False,0,,spell_small,confirmed,"3-elixir spell, max damage vs one target, weak vs swarms"
+Wall Breakers,26000058.0,2.0,Epic,False,True,1,Wall Breakers (Evolved),False,0,,win_condition;building_targeted_only;cycle,confirmed,Only troop that solely targets buildings; 2-elixir immediate threat
+Witch,26000007.0,5.0,Epic,False,True,1,Witch (Evolved),False,0,,spawner;air_defense;support_ranged,confirmed,Spawns 4 Skeletons every 7s; splash troop hitting air and ground
+Wizard,26000017.0,5.0,Rare,False,True,3,Wizard (Evolved),True,3,Hero Wizard,swarm_clear;air_defense,confirmed,"Premier splash trooper; melts swarms and support troops, hits air"
+X-Bow,27000008.0,6.0,Epic,False,False,0,,False,0,,win_condition,confirmed,Long-range siege building chips tower from own territory
+Zap,28000008.0,2.0,Common,False,True,1,Zap (Evolved),False,0,,spell_small;swarm_clear,confirmed,"2-elixir instant stun/damage; kills small swarms, resets Inferno/Sparky"
+Zappies,26000052.0,4.0,Rare,False,False,0,,False,0,,air_defense;support_ranged,confirmed,Ranged troop that stuns; targets air and ground for defense/support

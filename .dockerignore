@@ -1,0 +1,22 @@
+# Local dev environment -- never shipped to the image
+venv/
+__pycache__/
+*.pyc
+.env
+.claude/
+.git/
+.streamlit/
+
+# Frontend: rebuilt fresh inside the image (stage 1), never copied from host
+cr_platform/frontend/node_modules/
+cr_platform/frontend/dist/
+
+# The big, gitignored, constantly-growing data files -- these live on the
+# deployed host's persistent volume instead (mounted over data/ at deploy
+# time), not baked into the image. See Dockerfile's comment on `COPY data data`.
+data/collected_battles.csv
+data/crawl_state.json
+data/raw_matches/
+
+# Misc dev-only tooling not needed at runtime
+cr_tools/

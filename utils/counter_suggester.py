@@ -1,19 +1,23 @@
+import math
+
 import pandas as pd
 import numpy as np
 from utils.data_loader import get_card_at_level, get_card_types
 from utils.deck_analysis import ELIXIR_COSTS, CARD_ROLES, analyze_deck
 
 # Roles a well-rounded deck should cover; used to seed counter-deck generation
-# before filling remaining slots by raw counter score.
-CORE_ROLES = ["win_condition", "spell", "air_defense", "tank", "mini_tank"]
+# before filling remaining slots by raw counter score. "spell_big" represents
+# the single most impactful spell slot to guarantee (tower-damage output) --
+# the old generic "spell" tag was split into spell_small/spell_big/spell_utility.
+CORE_ROLES = ["win_condition", "spell_big", "air_defense", "tank", "mini_tank"]
 
 # Hard counters: card_name -> list of cards it counters well
 HARD_COUNTERS = {
     "Zap":          ["Skeleton", "Goblins", "Bat", "Fire Spirit", "Electro Spirit", "Sparky", "Inferno Dragon", "Inferno Tower"],
-    "The Log":      ["Skeleton", "Goblins", "Bat", "Princess", "Dart Goblin", "Rascal Girl"],
-    "Arrows":       ["Minion", "Bat", "Skeleton", "Goblins", "Witch", "Night Witch"],
-    "Fireball":     ["Musketeer", "Three Musketeers", "Barbarian", "Wizard", "Witch", "Goblin Gang"],
-    "Poison":       ["Graveyard", "Goblin Barrel", "Three Musketeers", "Musketeer"],
+    "The Log":      ["Skeleton", "Goblins", "Princess", "Dart Goblin", "Rascals"],  # ground-only spell -- can't hit Bat, it flies
+    "Arrows":       ["Minion", "Bat", "Skeleton", "Goblins", "Witch", "Night Witch", "Rascals"],
+    "Fireball":     ["Musketeer", "Three Musketeers", "Barbarian", "Wizard", "Witch", "Goblin Gang", "Rascals", "Skeleton Dragons"],
+    "Poison":       ["Graveyard", "Goblin Barrel", "Three Musketeers", "Musketeer", "Rascals", "Skeleton Dragons"],
     "Lightning":    ["Inferno Tower", "Electro Giant", "Sparky", "Three Musketeers", "X-Bow"],
     "Rocket":       ["X-Bow", "Mortar", "Elixir Collector", "Three Musketeers"],
     "Tornado":      ["Hog Rider", "Battle Ram", "Goblin Giant", "Golem"],
@@ -21,33 +25,127 @@ HARD_COUNTERS = {
     "Inferno Dragon":["Giant", "Golem", "P.E.K.K.A", "Mega Knight", "Lava Hound"],
     "Tesla":        ["Hog Rider", "Royal Hogs", "Balloon"],
     "Cannon":       ["Hog Rider", "Royal Hogs", "Giant", "Goblin Drill"],
-    "Mini P.E.K.K.A":["Balloon", "Hog Rider", "Giant", "Golem"],
-    "Valkyrie":     ["Skeleton", "Goblins", "Bat", "Barbarian", "Witch", "Night Witch"],
-    "Bowler":       ["Skeleton Army", "Barbarian", "Goblin Gang", "Royal Recruits"],
-    "Executioner":  ["Skeleton Army", "Minion Horde", "Barbarian", "Night Witch"],
-    "Musketeer":    ["Balloon", "Lava Hound", "Baby Dragon", "Minion Horde"],
-    "Mega Minion":  ["Balloon", "Baby Dragon", "Giant", "P.E.K.K.A"],
+    "Mini P.E.K.K.A":["Hog Rider", "Giant", "Golem"],  # ground melee -- can't touch Balloon, it flies
+    "Valkyrie":     ["Skeleton", "Goblins", "Barbarian", "Witch", "Night Witch", "Rascals"],  # ground melee splash -- can't hit Bat, it flies
+    "Bowler":       ["Skeleton Army", "Barbarian", "Goblin Gang", "Royal Recruits", "Rascals"],
+    "Executioner":  ["Skeleton Army", "Minion Horde", "Barbarian", "Night Witch", "Rascals"],
+    "Musketeer":    ["Balloon", "Lava Hound", "Baby Dragon", "Minion Horde", "Ram Rider", "Ronin"],
+    "Mega Minion":  ["Balloon", "Baby Dragon", "Giant", "P.E.K.K.A", "Skeleton Dragons"],
     "Electro Wizard":["Sparky", "Inferno Dragon", "Inferno Tower", "Lava Hound"],
     "Electro Dragon":["Sparky", "Skeleton Army", "Goblin Gang", "Minion Horde"],
-    "Baby Dragon":  ["Skeleton Army", "Goblin Gang", "Barbarian", "Minion Horde"],
-    "Hunter":       ["Giant", "Golem", "Mega Knight", "P.E.K.K.A", "Balloon"],
+    "Baby Dragon":  ["Skeleton Army", "Goblin Gang", "Barbarian", "Minion Horde", "Skeleton Dragons"],
+    "Hunter":       ["Giant", "Golem", "Mega Knight", "P.E.K.K.A"],  # shotgun spread is ground-only -- can't hit Balloon, it flies
     "Knight":       ["Miner", "Goblin Barrel", "Princess", "Dart Goblin"],
     "Dark Prince":  ["Skeleton Army", "Goblin Gang", "Barbarian", "Royal Recruits"],
     "Ice Wizard":   ["Hog Rider", "Battle Ram", "Royal Hogs", "Giant"],
     "Fisherman":    ["Giant", "Golem", "Balloon", "Lava Hound"],
-    "Mega Knight":  ["Skeleton Army", "Goblin Gang", "Barbarian", "Minion Horde"],
+    "Mega Knight":  ["Skeleton Army", "Goblin Gang", "Barbarian", "Ram Rider"],  # ground-only attacks -- can't hit Minion Horde, it flies
+    "P.E.K.K.A":    ["Ram Rider", "Hog Rider", "Royal Hogs"],
+    "Barbarian Barrel": ["Rascals", "Goblin Gang"],
+    "Ice Golem":    ["Skeleton Dragons", "Hog Rider"],
+    "Skeleton Army":["Ram Rider", "Ronin", "Vines"],
+    "Dart Goblin":  ["Ronin", "Balloon"],
+    "Ronin":        ["P.E.K.K.A", "Mega Knight", "Boss Bandit", "Prince", "Dark Prince", "Golem"],
+    "Vines":        ["Balloon", "Lava Hound", "Baby Dragon", "Minion Horde", "Flying Machine"],
 }
+
+SPELL_ROLES = ("spell_small", "spell_big", "spell_utility")
+
+# Real swarm troops (many cheap bodies) -- there's no dedicated "swarm" tag in
+# CARD_ROLES (the taxonomy tags swarm_CLEAR, i.e. what answers a swarm, not
+# what a swarm troop IS), so this one stays a short curated list rather than
+# derived, same as HARD_COUNTERS below. Everything else in WEAKNESS_COUNTERS
+# is derived directly from CARD_ROLES so new cards don't need a manual edit
+# here every time card_reference.csv's roles column is updated.
+SWARM_TROOPS = ["Skeleton Army", "Minion Horde", "Goblin Gang", "Guard", "Royal Recruits", "Barbarian", "Elite Barbarian"]
 
 # Weaknesses: type of deck -> list of exploiting cards
 WEAKNESS_COUNTERS = {
-    "no_air_defense": ["Balloon", "Lava Hound", "Inferno Dragon", "Baby Dragon", "Minion Horde", "Flying Machine"],
-    "no_spell":       ["Goblin Barrel", "Skeleton Army", "Minion Horde", "Goblin Gang", "Graveyard"],
+    "no_air_defense": CARD_ROLES.get("flying", []),
+    "no_spell":       CARD_ROLES.get("bait", []),
     "high_elixir":    ["Hog Rider", "Battle Ram", "Royal Hogs", "Goblin Barrel", "Miner", "X-Bow", "Mortar"],
-    "no_tank_killer": ["Giant", "Golem", "P.E.K.K.A", "Mega Knight", "Goblin Giant"],
-    "no_swarm_clear": ["Valkyrie", "Executioner", "Bowler", "Dark Prince", "Baby Dragon"],
+    "no_tank_killer": CARD_ROLES.get("tank", []),
+    "no_swarm_clear": SWARM_TROOPS,
     "building_heavy": ["Rocket", "Lightning", "Earthquake", "Goblin Drill", "Wall Breakers"],
     "low_hp_cards":   ["Fireball", "Rocket", "Lightning", "Poison"],
 }
+
+
+# Roles used to flavor an archetype label beyond just its win condition, e.g.
+# "Hog Rider (building_targeted_only, cycle)" reads more usefully than just "Hog Rider".
+ARCHETYPE_FLAVOR_ROLES = ("building_targeted_only", "bait", "spawner", "cycle")
+
+
+def archetype_label(deck: list[str]) -> str:
+    """Labels an 8-card deck by its primary win condition (+ flavor roles),
+    e.g. 'Hog Rider (cycle)'. Shared by loss-pattern classification
+    (utils/coaching.py) and real deck-vs-archetype matchup aggregation
+    (scripts/retrain_from_collected.py's build_deck_matchups)."""
+    win_conditions = [c for c in deck if c in CARD_ROLES.get("win_condition", [])]
+    if not win_conditions:
+        return "No clear win condition"
+    primary = win_conditions[0]
+    flavor = [role for role in ARCHETYPE_FLAVOR_ROLES if any(c in CARD_ROLES.get(role, []) for c in deck)]
+    return primary if not flavor else f"{primary} ({', '.join(flavor)})"
+
+
+def wilson_lower_bound(wins: int, n: int, z: float = 1.96) -> float:
+    """95% Wilson-score lower bound on a real win rate -- ranks 'tested decks
+    that beat this' by how MUCH real evidence backs the number, not the raw
+    win rate alone. Without this, a deck that went 5-0 (a tiny, lucky sample)
+    always outranks a deck that went 40-10 (a much more reliable 80%), which
+    is exactly why the same handful of small-sample '100%' decks kept showing
+    up for every opponent regardless of how different they actually were."""
+    if n == 0:
+        return 0.0
+    phat = wins / n
+    denom = 1 + z * z / n
+    center = phat + z * z / (2 * n)
+    margin = z * math.sqrt((phat * (1 - phat) + z * z / (4 * n)) / n)
+    return (center - margin) / denom
+
+
+def explain_deck_vs_opponent(
+    deck_cards: list[str], opponent_cards: list[str], weaknesses: list[str] | None = None
+) -> tuple[list[str], int]:
+    """Real, specific reasoning for why `deck_cards` counters THIS opponent's
+    actual 8 cards -- not just their archetype bucket. Cross-references the
+    same curated HARD_COUNTERS/WEAKNESS_COUNTERS tables get_counter_cards
+    already uses for the synthetic fallback, applied deck-wide instead of
+    per-card. Also returns a relevance score (higher = more of this specific
+    deck's cards actually answer something in this specific opponent's deck)
+    so real tested decks that share an archetype bucket can be reranked by
+    genuine relevance to the deck actually being faced, instead of all
+    getting identical treatment just because their archetype label matches.
+
+    Callers reranking many candidate decks against the SAME opponent (e.g.
+    decks.py's /decks/counter, which calls this once per real tested deck)
+    should compute detect_weaknesses(opponent_cards) once and pass it in --
+    it never changes across candidates, and recomputing it per-candidate was
+    the actual cause of a real ~20s slowdown (see _load_raw's docstring in
+    utils/data_loader.py)."""
+    if weaknesses is None:
+        weaknesses = detect_weaknesses(opponent_cards)
+    reasons = []
+    score = 0
+    for card in deck_cards:
+        for opp_card in HARD_COUNTERS.get(card, []):
+            if opp_card in opponent_cards:
+                reasons.append(f"{card} counters {opp_card}")
+                score += 2
+        for weakness in weaknesses:
+            if card in WEAKNESS_COUNTERS.get(weakness, []):
+                label = weakness.replace("_", " ").replace("no ", "their lack of ")
+                reasons.append(f"{card} exploits {label}")
+                score += 3
+    # Dedup while preserving order, cap at a readable handful.
+    seen = set()
+    deduped = []
+    for r in reasons:
+        if r not in seen:
+            seen.add(r)
+            deduped.append(r)
+    return deduped[:4], score
 
 
 def detect_weaknesses(opponent_cards: list[str]) -> list[str]:
@@ -63,11 +161,14 @@ def detect_weaknesses(opponent_cards: list[str]) -> list[str]:
 
     if "air_defense" not in opp_roles:
         weaknesses.append("no_air_defense")
-    if "spell" not in opp_roles:
+    if not any(r in opp_roles for r in SPELL_ROLES):
         weaknesses.append("no_spell")
-    if "tank" not in opp_roles and "mini_tank" not in opp_roles:
+    # "no_tank_killer" means the opponent has no answer that specifically
+    # melts tanks -- distinct from merely owning a tank themselves (that was
+    # the previous, mislabeled check).
+    if "tank_killer" not in opp_roles:
         weaknesses.append("no_tank_killer")
-    if "cycle" not in opp_roles:
+    if "swarm_clear" not in opp_roles:
         weaknesses.append("no_swarm_clear")
 
     opp_elixir = [ELIXIR_COSTS.get(c, 0) for c in opponent_cards if ELIXIR_COSTS.get(c, 0) > 0]

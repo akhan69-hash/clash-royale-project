@@ -1,0 +1,42 @@
+card_name,evolution_tiers,ability_name,ability_description,confidence
+Archer,1,Power Shot,"Evolved Archers gain +25% HP and 6.5-tile range. Enemies at 5-6.5 tiles (out of normal range) take a Power Shot dealing double damage.",confirmed
+Baby Dragon,1,Friendly Drag,"Creates an 8x9 wind zone around itself that slows enemy troop movement speed by 30% and speeds up allied troops by 30%. Tied to the dragon's position; lingers ~2s after death.",confirmed
+Barbarian,1,Anger,"Each hit grants a stacking Rage effect (~30-35% boost to hit speed/movement speed/damage) for 3 seconds. Evolved Barbarians spawn with ~10% higher HP than normal.",confirmed
+Bat,1,,"Every attack heals the attacking Bat via two 0.5s-interval healing pulses, allowing overheal up to 150% of base HP. Evolved Bats have +50% HP.",confirmed
+Battle Ram,1,Super Charge,"Deals area damage and pushback during its charge; bounces off its target on impact and repeatedly deals damage until destroyed. Stun effects (Zap, Ice Spirit, Electro Wizard) reset the charge.",confirmed
+Bomber,1,Bouncy Bomb,"Its bomb bounces 2 extra times after the initial impact, each bounce dealing full splash damage and covering ~2.5 extra tiles. +25% HP.",confirmed
+Cannon,1,Deploy Barrage,"On deploy, fires 9 explosive projectiles in 2 rows (5 top / 4 bottom) dealing ~320 area damage total with knockback across a 2.5-tile radius per hit -- enough to wipe small swarms.",confirmed
+Dart Goblin,1,Toxic Darts,"Hits leave a poisoned zone that deals continuing damage, escalating over 3 tiers with consecutive hits (~51 -> 115 -> 307 DPS), each poison lasting ~4s.",confirmed
+Electro Dragon,1,Infinite Bolts,"Its chain-lightning attack (normally 3 targets) becomes unlimited -- it keeps arcing to any target within 4 tiles of the last, at 33% less damage and 80% slower per hop after the first 3 targets, and no longer stuns past that point.",confirmed
+Executioner,1,Axe Smash,"On the outgoing throw, enemies within 3.5 tiles of the axe's start are knocked back and take bonus damage. The bonus damage/knockback only applies on the way out, not on the return.",confirmed
+Firecracker,1,,"Its shots leave sparks that deal damage every 0.25s and slow enemies caught in them (Poison-like DoT), on top of the projectile splitting into 5 shrapnel pieces on impact.",confirmed
+Furnace,1,Hot Spawns,"While attacking, Fire Spirit spawn interval drops from 5s to ~2.4s (originally 1.8s before a balance change), alternating spawn sides of the Furnace each time.",confirmed
+Giant Snowball,1,Snow Bowling,"Traps enemy troops inside the snowball and rolls them forward ~4 tiles before releasing/slowing them; affects troops of any weight, and trapped troops can't be targeted mid-roll.",confirmed
+Goblin Barrel,1,Decoy Barrel,"A second barrel is thrown into the mirrored tile of the opposite lane, spawning 3 Decoy Goblins on landing -- forcing the opponent to react on both lanes.",confirmed
+Goblin Cage,1,Cage Pull,"Pulls a single enemy ground troop within 3 tiles into the cage, dealing damage over time until the cage or the trapped unit dies. Doesn't affect air/buildings/clones; jumping/dashing units are briefly immune.",confirmed
+Goblin Drill,1,Whack-A-Drill,"Hides underground and resurfaces at a new spot near the tower at 66% and 33% HP (twice total), spawning 2 Goblins each time it resurfaces, plus 2 more on death.",confirmed
+Goblin Giant,1,Sack-trick,"Below 50% HP, spawns a knife Goblin every 1.5s from ~2.5 tiles behind itself, without any change to its own base stats.",confirmed
+Hunter,1,Net Gun,"Every 3rd deployment (2-cycle), throws a net that roots the nearest enemy troop (ground or air) in place -- unable to move or attack -- for 4 seconds.",confirmed
+Ice Spirit,1,Ice Blast,"On hitting a target, deals a delayed second freeze/damage blast ~3s later (splashing nearby enemies too), plus a slightly larger splash radius than the base card.",confirmed
+Inferno Dragon,1,Beam Momentum,"Its damage-ramp beam no longer resets to Stage 1 when switching targets, as long as a new target is found within 9 seconds -- damage escalates from ~88 DPS up to 2,110+ DPS the longer it stays locked on (across targets).",confirmed
+Knight,3,Shield,"While not attacking, takes 60% less damage from all sources; the shield stays up until the Knight next deals damage.",confirmed
+Lumberjack,1,Rage Ghost,"On death, leaves behind an invulnerable, untargetable ghost that keeps fighting as long as it stays inside an active Rage effect -- vanishes once the Rage ends.",confirmed
+Mega Knight,1,Mega Uppercut,"Every attack launches the target 4 tiles toward the nearest enemy Crown Tower (not just the jump-slam) -- effective for repeatedly displacing single tanks.",confirmed
+Minion Horde,1,Horde Immunity,"A Minion that takes a non-fatal hit becomes invisible and invincible for 3 seconds (untargetable, immune to Freeze/spells), at the cost of -33% move speed and -50% hit speed while active.",confirmed
+Mortar,1,,"Hit speed ~25% faster and +20% HP; each shot also drops a Goblin at the landing site, adding extra sustained damage.",confirmed
+Musketeer,3,Long Shot,"Fires 3 long-range sniper shots (up to 30 tiles, +50% damage each) at deploy that only hit troops/buildings, not Crown Towers directly; reverts to normal attacks against anything within 6 tiles or once the 3 shots are used.",confirmed
+P.E.K.K.A,1,Healing Blade,"Restores 12.5% of its own HP on every killing blow (troop or tower), and can overheal up to 150% of base HP.",confirmed
+Princess,1,Ice Arrows,"Her 1st shot and every 3rd shot after (1, 4, 7...) fires a wider (3.0 vs 2.5-tile) icy arrow that slows enemies 30% for 7s; on death, leaves a frost burst that slows anything walking into it.",confirmed
+Royal Ghost,1,Souldiers,"Spawns two extra invisible 'Souldier' ghosts (Skeleton-level HP/damage) each time it goes invisible; they don't despawn and inherit the same invisibility mechanic.",confirmed
+Royal Giant,1,,"+10% HP, and every attack on a building also deals area damage + ground knockback in a 2.5-tile radius, giving it built-in swarm-clearing on top of its normal single-target hits.",confirmed
+Royal Hogs,1,Flying Pigs,"Deploys airborne (untargetable by ground troops) and flies toward the nearest building, crashing down (small area damage) either on arrival or if hit while airborne, then continues as a normal Royal Hog on foot.",confirmed
+Royal Recruits,1,Charge,"After its per-recruit shield (blocks one hit) is broken, that Recruit charges 2 tiles and deals 2x damage on impact -- Prince-style.",confirmed
+Skeleton,1,Never-ending Horde,"Every attack spawns an additional Evolved Skeleton, up to a max of 8 on the field from the original 3-4.",confirmed
+Skeleton Army,1,Undead General,"Defeated Skeletons leave behind untargetable, unlimited-HP shadow copies (still dealing damage) led by 'General Gerry' -- killing Gerry removes all remaining shadows at once.",confirmed
+Skeleton Barrel,1,Double Trouble,"Carries 2 barrels of 7 Skeletons each -- one drops at 75% HP, the second on death/arrival -- with +25% HP and +64% death damage versus the base card.",confirmed
+Tesla,1,Electro Pulse,"Emits an expanding circular shockwave (up to 6-tile radius) dealing damage and a 0.5s stun to everything caught in it; +20% HP.",confirmed
+Valkyrie,1,Spin Wind,"Each axe swing creates a small tornado that pulls nearby ground and air enemies toward her while dealing bonus damage -- punishes units that try to stand at range around her.",confirmed
+Wall Breakers,1,Barrel Walkers,"On death/impact, explodes (reduced damage to towers) and spawns a 'Runner' per unit -- a low-HP, moderate-damage, building-targeting melee troop that keeps going on foot.",confirmed
+Witch,1,Healing Bones,"Heals ~109 HP (at tournament level) whenever a nearby Skeleton dies -- including Skeletons from Guards, Tombstone, Skeleton Army, and Skeleton Barrel, not just her own spawns. Can overheal up to 130% of base HP.",confirmed
+Wizard,3,Fire Shield,"Gains a shield that blocks the first hit; when the shield breaks, pushback-vulnerable troops within 3 tiles are knocked back 3 tiles and take ~231 damage.",confirmed
+Zap,1,Triple Shock,"Zaps the same area 3 times at 1s intervals, with the radius expanding each time (2.5 -> 3 -> 3.5 tiles), each hit dealing the same damage/stun as a normal Zap.",confirmed

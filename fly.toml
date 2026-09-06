@@ -1,0 +1,43 @@
+# Fly.io app config for Royale IQ. `app` must be globally unique on Fly --
+# `fly launch` will prompt to confirm/change this name and can rewrite this
+# file; treat this as a starting point, not gospel.
+app = "royaleiq"
+primary_region = "iad"  # pick whichever Fly region is closest to your real users
+
+[build]
+
+# One always-on machine, no autoscaling/auto-stop for v1:
+#  - the in-process background crawler (services/auto_crawler.py, started in
+#    main.py's startup event) needs to keep running continuously, which an
+#    auto-stopped-when-idle machine would interrupt
+#  - a single stable machine keeps the dedicated outbound IPv4 (see the
+#    handoff steps -- `fly ips allocate-v4`) simple, since that's the IP
+#    registered with the Clash Royale API for CR_API_KEY to work at all
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "off"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    grace_period = "90s"  # matches main.py's startup cache pre-warm, which can take up to ~80s at this dataset size
+    interval = "30s"
+    timeout = "10s"
+    method = "GET"
+    path = "/health"
+
+[[vm]]
+  memory = "2gb"  # the in-memory battle cache alone is several hundred MB and growing -- see services/battle_collector.py
+  cpu_kind = "shared"
+  cpus = 1
+
+# Persistent volume for data/ (the ~500MB+ collected_battles.csv, crawl_state.json,
+# and everything else under data/ -- see REPO_ROOT resolution in
+# cr_platform/backend/services/battle_collector.py and routers/meta.py).
+# Created via `fly volumes create` before the first deploy; NOT auto-created
+# by `fly deploy` alone. Requires a one-time data upload -- see the handoff
+# steps for the exact command once the volume exists.
+[[mounts]]
+  source = "royaleiq_data"
+  destination = "/app/data"

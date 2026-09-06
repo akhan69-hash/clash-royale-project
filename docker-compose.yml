@@ -1,0 +1,32 @@
+services:
+  app:
+    build: .
+    env_file: .env  # CR_API_KEY / CORS_ORIGINS -- real secret, never committed
+    environment:
+      - ENVIRONMENT=production  # see main.py -- disables /docs, /redoc, /openapi.json
+    volumes:
+      # Bind mount (not a named Docker volume) so data/ is a plain,
+      # inspectable/backup-able directory on the host disk, matching the
+      # container's non-root appuser (UID 1001, see Dockerfile) to the
+      # host's `ubuntu` user of the same UID.
+      - ./data:/app/data
+    restart: unless-stopped
+    expose:
+      - "8080"  # only reachable from other containers on this compose network -- Caddy is the sole public entry point
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data      # Let's Encrypt certs, once a real domain is added (see deploy/Caddyfile)
+      - caddy_config:/config
+    restart: unless-stopped
+    depends_on:
+      - app
+
+volumes:
+  caddy_data:
+  caddy_config:

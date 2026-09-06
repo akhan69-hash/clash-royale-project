@@ -1,0 +1,248 @@
+import { useState, useEffect, useRef } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { motion, AnimatePresence } from 'framer-motion'
+import { X } from 'lucide-react'
+import { cardsApi, Card } from '../utils/api'
+import { RARITY_COLORS, CardName } from './CardImage'
+
+interface Props {
+  card: Card
+  onClose: () => void
+}
+
+type ViewMode = 'base' | 'evolved' | 'hero'
+
+// Real feedback (2026-08-22): "remove the graphs after clicking card,
+// average arena level the card, usage, and more personal data about your
+// card behavior using the specific card. No graphs or very tech stuff."
+// This modal used to have a Stats tab (per-level HP/damage/DPS line charts
+// + a scrollable level-by-level table) and a Role & Usage tab (win rate,
+// presence rate, elixir efficiency, real synergy partners, per-arena usage
+// breakdown, real Evolution/Hero usage split, counters/matchups) -- all
+// real data, but a lot of it for a casual player just looking a card up.
+// Cut down to what's actually simple and useful: what the card is, what its
+// Evolution/Hero ability does in plain English, and (optionally) one single
+// real win-rate number -- no charts, no tables, no per-arena/per-variant
+// breakdowns.
+//
+// REWORKED 2026-09-02 (real feedback): "when you're looking at a deck, when
+// you click the card... make it three d ish movable card when you're
+// scrolling or moving. And when you scroll down under it, you can see more
+// info, small lines of infos which are scrollable." The card art is now a
+// real, large, CSS-3D-tilting focal point (mouse-move-driven rotateX/
+// rotateY, snapping back on mouse-leave -- the CSS-tilt direction already
+// confirmed, not a Figma-authored asset) that stays fixed at the top of the
+// modal while everything else (name/type/stats/evolution details) lives in
+// its own independently scrollable panel underneath, instead of the whole
+// modal scrolling as one block.
+function TiltCard({ src, alt, rarityColor, contain }: { src?: string | null; alt: string; rarityColor: string; contain: boolean }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [tilt, setTilt] = useState({ rx: 0, ry: 0 })
+  const [imgError, setImgError] = useState(false)
+  useEffect(() => { setImgError(false) }, [src])
+
+  const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = ref.current?.getBoundingClientRect()
+    if (!rect) return
+    const px = (e.clientX - rect.left) / rect.width - 0.5
+    const py = (e.clientY - rect.top) / rect.height - 0.5
+    setTilt({ rx: py * -18, ry: px * 18 })
+  }
+  const onLeave = () => setTilt({ rx: 0, ry: 0 })
+
+  return (
+    <div style={{ perspective: 700 }} className="mx-auto">
+      <div
+        ref={ref}
+        onMouseMove={onMove}
+        onMouseLeave={onLeave}
+        className="relative w-40 h-52 rounded-2xl overflow-hidden shadow-glow transition-transform duration-150 ease-out cursor-grab active:cursor-grabbing"
+        style={{
+          transform: `rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg) scale(${tilt.rx || tilt.ry ? 1.04 : 1})`,
+          transformStyle: 'preserve-3d',
+          border: `3px solid ${rarityColor}`,
+          boxShadow: `0 0 20px 2px ${rarityColor}70, ${tilt.ry * 0.6}px ${-tilt.rx * 0.6}px 24px rgba(0,0,0,0.5)`,
+          background: `linear-gradient(160deg, ${rarityColor}22, ${rarityColor}55)`,
+        }}
+      >
+        {imgError || !src ? (
+          <div className="w-full h-full flex items-center justify-center text-white/70 text-sm">{alt}</div>
+        ) : (
+          <img src={src} alt={alt} className={`w-full h-full ${contain ? 'object-contain' : 'object-cover'}`}
+            onError={() => setImgError(true)} draggable={false} />
+        )}
+        {/* Faint moving specular highlight, offset opposite the tilt -- sells
+            the "glossy card catching light" illusion without a real 3D
+            renderer. Purely decorative, pointer-events-none. */}
+        <div className="absolute inset-0 pointer-events-none"
+          style={{
+            background: `radial-gradient(circle at ${50 - tilt.ry * 2}% ${50 + tilt.rx * 2}%, rgba(255,255,255,0.16), transparent 55%)`,
+          }} />
+      </div>
+    </div>
+  )
+}
+
+export default function CardDetailModal({ card, onClose }: Props) {
+  const [view, setView] = useState<ViewMode>('base')
+  // Some very recently-added Hero cards (Hero Valkyrie/Berserker, Season 86)
+  // have a real heroMedium URL in the official catalog, but the actual image
+  // file 404s on Supercell's own CDN (confirmed 2026-08-05) -- this can't be
+  // caught by a null check since the URL string itself is valid-looking, only
+  // the fetch fails at render time. Falls back to the base card art instead
+  // of silently hiding the header image.
+  const [headerImageFailed, setHeaderImageFailed] = useState(false)
+
+  const { data } = useQuery({
+    queryKey: ['card-detail', card.name, view === 'evolved'],
+    queryFn: () => cardsApi.getDetail(card.name, view === 'evolved'),
+  })
+  const { data: profile } = useQuery({
+    queryKey: ['card-profile', card.name],
+    queryFn: () => cardsApi.getProfile(card.name),
+  })
+
+  const rarityColor = RARITY_COLORS[card.rarity] ?? RARITY_COLORS.Common
+
+  const preferredHeaderImage = view === 'evolved' ? (card.evolution_image_url ?? card.image_url)
+    : view === 'hero' ? (card.hero_image_url ?? card.image_url)
+    : card.image_url
+  useEffect(() => { setHeaderImageFailed(false) }, [preferredHeaderImage])
+  const headerImage = headerImageFailed ? card.image_url : preferredHeaderImage
+  // Real Evolution/Hero art (like every other card render in the app) has
+  // its own baked-in frame and shows uncropped; plain base art fills the tile.
+  const usingRealFrame = !headerImageFailed && (view === 'evolved' || view === 'hero') && headerImage !== card.image_url
+
+  const viewOptions: { key: ViewMode; label: string; available: boolean }[] = [
+    { key: 'base', label: 'Base', available: true },
+    { key: 'evolved', label: '⬆ Evolved', available: card.has_evolution },
+    { key: 'hero', label: '★ Hero', available: card.has_hero },
+  ]
+
+  return (
+    <AnimatePresence>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        {/* Backdrop */}
+        <motion.div className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={onClose}/>
+
+        {/* Modal -- was a 2px rarity-colored border ("extra frame" per real
+            feedback, not needed on a now much simpler popup); a plain
+            neutral border matches every other card/panel in the app. Now a
+            fixed-height flex column: the tilting card stays put, only the
+            info panel below it scrolls (see the big comment above). */}
+        <motion.div
+          className="relative bg-bg-surface rounded-2xl border border-border shadow-card w-full max-w-lg max-h-[85vh] flex flex-col z-10"
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.9, y: 20 }}
+        >
+          <button onClick={onClose}
+            className="absolute top-3 right-3 z-20 p-1.5 rounded-lg bg-black/40 hover:bg-black/70 text-white/80 hover:text-white transition-colors">
+            <X size={18}/>
+          </button>
+
+          {/* Fixed top section -- the real focal point now, not a small
+              header thumbnail. Doesn't scroll with the info below it. */}
+          <div className="p-5 pb-4 shrink-0 text-center">
+            <TiltCard src={headerImage} alt={card.name} rarityColor={rarityColor} contain={usingRealFrame} />
+            <h2 className="text-xl mt-3"><CardName name={card.name} rarity={card.rarity} /></h2>
+            <p className="text-text-muted text-xs mt-0.5">Tilt it -- move your cursor over the card.</p>
+
+            {(card.has_evolution || card.has_hero) && (
+              <div className="flex gap-1 justify-center mt-3">
+                {viewOptions.filter(v => v.available).map(v => (
+                  <button key={v.key} onClick={() => setView(v.key)}
+                    className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors
+                      ${view === v.key ? 'bg-accent text-white' : 'bg-bg-card text-text-secondary hover:text-text-primary'}`}>
+                    {v.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Scrollable info panel -- everything else, "small lines of info"
+              you scroll through independently of the tilting card above. */}
+          <div className="overflow-y-auto px-5 pb-5 border-t border-border pt-4">
+            <div className="flex items-center gap-2 flex-wrap justify-center mb-3">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-bg-card text-text-secondary">{card.type}</span>
+              <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: rarityColor + '30', color: rarityColor }}>
+                {card.rarity}
+              </span>
+              {profile?.live_stats?.win_rate != null && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-400/15 text-cyan-300">
+                  🏆 {profile.live_stats.win_rate}% real win rate
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { label: 'Elixir', value: card.elixir_cost ?? '—' },
+                { label: 'Max Level', value: card.max_level },
+                { label: 'Range', value: card.range ?? '—' },
+                { label: 'Hit Speed', value: card.hit_speed ? `${card.hit_speed}s` : '—' },
+              ].map(({ label, value }) => (
+                <div key={label} className="bg-bg-card rounded-lg p-2">
+                  <div className="text-xs text-text-muted">{label}</div>
+                  <div className="text-sm font-semibold text-white">{value}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Evolution details, shown when that view is active */}
+            {view === 'evolved' && card.has_evolution && (
+              <div className="mt-4">
+                <div className="text-sm font-semibold text-cyan-300">
+                  {card.evolution_name}
+                  {card.evolution_ability_name && ` -- ${card.evolution_ability_name}`}
+                </div>
+                {card.evolution_ability_description ? (
+                  <>
+                    <div className="text-xs text-text-secondary mt-0.5">{card.evolution_ability_description}</div>
+                    {card.evolution_confidence === 'unconfirmed' && (
+                      <div className="text-xs text-yellow-400 mt-1">⚠ Unconfirmed -- verify in-game</div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-xs text-text-muted">
+                    Evolutions grant a unique situational ability rather than a flat stat boost --
+                    check in-game for this card's exact effect.
+                  </div>
+                )}
+                {data?.card?.evolution_hp_bonus ? (
+                  <div className="text-xs mt-2 px-2 py-1 rounded-lg bg-cyan-400/10 text-cyan-300 inline-block">
+                    ⬆ +{Math.round(data.card.evolution_hp_bonus * 100)}% Hitpoints vs base (confirmed).
+                  </div>
+                ) : null}
+              </div>
+            )}
+
+            {/* Hero details, shown when that view is active */}
+            {view === 'hero' && card.has_hero && (
+              <div className="mt-4">
+                <div className="text-sm font-semibold text-gold">
+                  {card.hero_name}
+                  {card.hero_ability_name && ` -- ${card.hero_ability_name}`}
+                </div>
+                {card.hero_ability_description ? (
+                  <>
+                    <div className="text-xs text-text-secondary mt-0.5">{card.hero_ability_description}</div>
+                    {card.hero_confidence === 'unconfirmed' && (
+                      <div className="text-xs text-yellow-400 mt-1">⚠ Unconfirmed -- verify in-game</div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-xs text-text-muted">
+                    Hero is a separate, permanent upgrade system from Evolution -- check in-game for this card's exact effect.
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </motion.div>
+      </div>
+    </AnimatePresence>
+  )
+}
