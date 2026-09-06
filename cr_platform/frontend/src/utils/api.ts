@@ -1,8 +1,16 @@
 import axios from 'axios'
 import { getSessionId, getKnownPlayerTag } from './session'
 
+// Real feedback (2026-09-06): "let's Work UI UX using vercel" -- Vercel
+// hosts a separate preview build of the frontend (fast iteration, instant
+// preview URLs) while the real backend stays on the Oracle VM, so this can
+// no longer assume same-origin. VITE_API_BASE_URL, when set (Vercel's own
+// project env vars), points at the real backend's absolute /api URL;
+// omitted entirely (the production Docker image, which still serves both
+// frontend and backend from one origin) falls back to the original
+// same-origin relative path, unchanged for that deployment.
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
   timeout: 15000,
 })
 

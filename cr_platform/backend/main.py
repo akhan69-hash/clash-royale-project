@@ -60,6 +60,14 @@ CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", "http://localhost:5
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
+    # Real feedback (2026-09-06): "let's Work UI UX using vercel" -- Vercel
+    # gives every single deployment (production AND every preview build) its
+    # own real, dynamically-generated subdomain (<project>-<hash>.vercel.app),
+    # so a fixed allow_origins list can never keep up with new preview URLs
+    # as they're created. This regex covers any real *.vercel.app origin in
+    # one rule instead of needing CORS_ORIGINS updated (and the backend
+    # redeployed) for every new preview.
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
