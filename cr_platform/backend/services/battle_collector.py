@@ -444,6 +444,104 @@ def _append_csv(rows: list[dict]) -> None:
             writer.writeheader()
         writer.writerows(rows)
     _update_lifetime_totals(rows)
+    _append_archive(rows)
+
+
+# Real regression found 2026-09-07 (user-reported): "My Decks" on Player/
+# Coach used to show a real player's FULL deck history; after the 2026-09-06
+# disk emergency pruned Postgres's battles table to a small rolling recent
+# window (see prune_old_battles.py/rebuild_battles_table.py), any player not
+# active in that exact window lost most of their real history -- because
+# _pg_deck_history_records only ever looked at Postgres, which is now
+# INTENTIONALLY bounded. That's the real tension the user flagged: keeping
+# Supabase's disk usage in check should never come at the cost of real
+# personal data like a player's own deck history.
+#
+# Real fix: a local SQLite mirror (this project's own "SQLite migration
+# still overdue" note, now actually built) -- FULL history, a real index on
+# team_tag, and zero Supabase disk quota impact since it lives entirely on
+# the VM's own (currently 24GB-free) disk. Postgres keeps doing exactly what
+# it's good at (fast recent-window aggregate queries, bounded on purpose);
+# this is the separate "personal data" store for anything that genuinely
+# needs a specific player's full real history regardless of age.
+ARCHIVE_DB_PATH = REPO_ROOT / "data" / "battles_archive.db"
+_archive_schema_ready = False
+
+
+def _archive_connect():
+    import sqlite3
+    conn = sqlite3.connect(ARCHIVE_DB_PATH, timeout=30)
+    conn.execute("PRAGMA journal_mode=WAL")  # lets reads proceed concurrently with the occasional write
+    conn.execute("PRAGMA busy_timeout=30000")
+    global _archive_schema_ready
+    if not _archive_schema_ready:
+        cols = ", ".join(f'"{c}" TEXT' for c in FIELDNAMES)
+        conn.execute(f"CREATE TABLE IF NOT EXISTS battles ({cols})")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_archive_team_tag ON battles(team_tag)")
+        # UNIQUE (not just an index) -- must match scripts/backfill_battles_archive.py's
+        # own CREATE UNIQUE INDEX exactly (same name), since whichever of the
+        # two runs first is what actually defines this index -- SQLite's
+        # "IF NOT EXISTS" silently no-ops the second CREATE, uniqueness and
+        # all, if the names don't produce compatible definitions.
+        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_archive_dedup ON battles(battle_time, team_tag, opponent_tag)")
+        conn.commit()
+        _archive_schema_ready = True
+    return conn
+
+
+def _append_archive(rows: list[dict]) -> None:
+    conn = _archive_connect()
+    try:
+        placeholders = ", ".join("?" for _ in FIELDNAMES)
+        # OR IGNORE -- defense in depth against the unique dedup index above.
+        # In the normal flow these rows are already the genuinely-accepted
+        # ones (Postgres's own ON CONFLICT DO NOTHING already filtered candidate_rows
+        # down before this is ever called), so this should rarely actually
+        # trigger -- but a plain INSERT would raise and drop the whole batch
+        # if it ever did, which OR IGNORE avoids.
+        conn.executemany(
+            f"INSERT OR IGNORE INTO battles ({', '.join(FIELDNAMES)}) VALUES ({placeholders})",
+            [tuple(r.get(c, "") for c in FIELDNAMES) for r in rows],
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def _archive_deck_history_records(team_tag: str) -> list[dict]:
+    """Same record shape/cap as _pg_deck_history_records, sourced from the
+    local SQLite archive instead -- has the player's REAL FULL history
+    (mirrors collected_battles.csv), not just whatever Postgres's bounded
+    recent window happens to still contain."""
+    conn = _archive_connect()
+    try:
+        cur = conn.execute(
+            """SELECT team_cards, result, team_evolved_cards, team_hero_cards,
+                      team_ambiguous_cards, collected_at, team_tower_troop
+               FROM battles WHERE team_tag = ?
+               ORDER BY collected_at DESC LIMIT ?""",
+            (team_tag, MAX_DECK_HISTORY_PER_PLAYER),
+        )
+        rows = cur.fetchall()
+    finally:
+        conn.close()
+
+    records = []
+    for team_cards, result, evolved, hero, ambiguous, collected_at, tower_troop in rows:
+        cards = [c for c in (team_cards or "").split(";") if c]
+        deck = tuple(sorted(cards)) if len(cards) == 8 else None
+        if not deck:
+            continue
+        records.append({
+            "deck": deck,
+            "result": result or "",
+            "evolved": tuple(c for c in (evolved or "").split(";") if c),
+            "hero": tuple(c for c in (hero or "").split(";") if c),
+            "ambiguous": tuple(c for c in (ambiguous or "").split(";") if c),
+            "collected_at": collected_at or "",
+            "tower_troop": tower_troop or "",
+        })
+    return records
 
 
 LIFETIME_TOTALS_PATH = REPO_ROOT / "data" / "lifetime_totals.json"
@@ -800,6 +898,15 @@ def _pg_deck_history_records(conn, team_tag: str) -> list[dict]:
 
 
 def _deck_history_records(team_tag: str) -> list[dict]:
+    # Personal per-player history -- always the local SQLite archive now
+    # (real full history, see the big comment above ARCHIVE_DB_PATH), not
+    # Postgres (intentionally bounded to a recent window for disk reasons)
+    # or the legacy in-memory cache. Falls back to those only if the archive
+    # genuinely has nothing yet for this player (e.g. a brand-new deploy
+    # before the one-time backfill has run).
+    records = _archive_deck_history_records(team_tag)
+    if records:
+        return records
     conn = _pg_connect()
     if conn is not None:
         return _pg_deck_history_records(conn, team_tag)

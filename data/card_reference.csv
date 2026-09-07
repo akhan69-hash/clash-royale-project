@@ -30,7 +30,7 @@ Electro Spirit,26000084.0,1.0,Common,False,False,0,,False,0,,cycle;air_defense;s
 Electro Wizard,26000042.0,4.0,Legendary,False,False,0,,False,0,,support_ranged;air_defense,confirmed,"Ranged stun support troop, hits 2 targets, air-targeting"
 Elite Barbarian,26000043.0,6.0,Common,False,False,0,,False,0,,win_condition;tank_killer;mini_tank,confirmed,Two fast high-damage troops; ground tank killers/win condition
 Elixir Collector,27000007.0,6.0,Rare,False,False,0,,False,0,,,confirmed,Pure resource building generating elixir; no fixed tag fits it
-Elixir Golem,26000067.0,3.0,Rare,False,False,0,,False,0,,tank;building_targeted_only,confirmed,High-HP building-only troop that splits into golemites on death
+Elixir Golem,26000067.0,3.0,Rare,False,False,0,,False,0,,win_condition;tank;building_targeted_only,confirmed,High-HP building-only troop that splits into golemites on death
 Executioner,26000045.0,5.0,Epic,False,True,1,Executioner (Evolved),False,0,,swarm_clear;air_defense,confirmed,"Boomerang axe splash hits air+ground twice, counters swarms"
 Fire Spirit,26000031.0,1.0,Common,False,False,0,,False,0,,cycle;air_defense;swarm_clear,confirmed,1-elixir suicide splash troop hitting air+ground; wipes cheap swarms
 Fireball,28000000.0,4.0,Rare,False,False,0,,False,0,,spell_big,confirmed,"4-elixir medium-radius spell, heavy damage, chips or finishes towers"
@@ -62,11 +62,11 @@ Hog Rider,26000021.0,4.0,Rare,False,False,0,,False,0,,win_condition;building_tar
 Hunter,26000044.0,4.0,Epic,False,True,1,Hunter (Evolved),False,0,,tank_killer;swarm_clear,confirmed,"Short-range shotgun troop; melts tanks up close, splashes groups"
 Ice Golem,26000038.0,2.0,Rare,False,False,0,,True,2,Hero Ice Golem,mini_tank;building_targeted_only;cycle,confirmed,"Cheap building-only mini-tank; explodes, slowing enemies on death"
 Ice Spirit,26000030.0,1.0,Common,False,True,1,Ice Spirit (Evolved),False,0,,cycle;air_defense,confirmed,"1-elixir stun troop hitting air+ground, cheap cycling utility"
-Ice Wizard,26000023.0,3.0,Legendary,False,False,0,,False,0,,support_ranged;air_defense;swarm_clear,confirmed,Ranged splash troop that slows enemies; defends air and clears swarms
+Ice Wizard,26000023.0,3.0,Legendary,False,False,0,,True,2,Hero Ice Wizard,support_ranged;air_defense;swarm_clear,confirmed,Ranged splash troop that slows enemies; defends air and clears swarms
 Inferno Dragon,26000037.0,4.0,Legendary,False,True,1,Inferno Dragon (Evolved),False,0,,tank_killer;flying;air_defense,confirmed,"Ramping single-target beam melts tanks; airborne, air-targeting"
 Inferno Tower,27000003.0,5.0,Rare,False,False,0,,False,0,,air_defense;tank_killer,confirmed,"Building, ramping damage over time, melts tanks; hits air and ground"
 Knight,26000000.0,3.0,Common,False,True,3,Knight (Evolved),True,3,Hero Knight,mini_tank,confirmed,"Cheap 3-elixir all-rounder, widely ranked among best mini-tanks"
-Lava Hound,26000029.0,7.0,Legendary,False,False,0,,False,0,,tank;flying;building_targeted_only,confirmed,"Only flying tank, targets buildings only, shields air beatdown"
+Lava Hound,26000029.0,7.0,Legendary,False,False,0,,False,0,,win_condition;tank;flying;building_targeted_only,confirmed,"Only flying tank, targets buildings only, shields air beatdown"
 Lightning,28000007.0,6.0,Epic,False,False,0,,False,0,,spell_big,confirmed,"6-elixir spell hits/stuns 3 highest-HP targets, sniping/finishing"
 Little Prince,26000093.0,3.0,Champion,True,False,0,,False,0,,support_ranged;air_defense,confirmed,"Ranged Champion hits air+ground, summons tanky Guardian ally"
 Lumberjack,26000035.0,4.0,Legendary,False,True,1,Lumberjack (Evolved),False,0,,mini_tank;spell_utility,confirmed,Fast high-HP/damage troop; spawns a Rage spell on death
@@ -125,3 +125,4 @@ Wizard,26000017.0,5.0,Rare,False,True,3,Wizard (Evolved),True,3,Hero Wizard,swar
 X-Bow,27000008.0,6.0,Epic,False,False,0,,False,0,,win_condition,confirmed,Long-range siege building chips tower from own territory
 Zap,28000008.0,2.0,Common,False,True,1,Zap (Evolved),False,0,,spell_small;swarm_clear,confirmed,"2-elixir instant stun/damage; kills small swarms, resets Inferno/Sparky"
 Zappies,26000052.0,4.0,Rare,False,False,0,,False,0,,air_defense;support_ranged,confirmed,Ranged troop that stuns; targets air and ground for defense/support
+Minion Giant,26000107,4,Rare,False,False,0,,False,0,,,,Auto-detected 2026-09-07 from the live API -- verify Type/roles manually
