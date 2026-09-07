@@ -222,7 +222,7 @@ function BuildTab({ cards }: { cards: any[] }) {
           </button>
           <p className="text-text-muted text-[10px] mb-2">
             Drag a card into a slot to add it, drag out (or click) to remove. First 3 slots are Evolution/Hero/Wild --
-            only cards eligible for that slot will land there.
+            any card can go there, but only an eligible card actually evolves/hero's.
           </p>
           <DeckSlots deck={deck} cards={cards} onToggle={toggleCard} slots={slots} levels={levels} onLevelChange={bump} />
           <TowerSlot cards={cards} selected={towerTroop} onSelect={setTowerTroop} />
