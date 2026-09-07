@@ -30,30 +30,33 @@ export const ROLE_META: Record<'evolution' | 'hero' | 'wild', { label: string; b
 }
 
 /**
- * Real slot eligibility, per Supercell's own Mid-March 2026 patch notes
- * (verified directly against the primary source, cross-checked against
- * multiple independent phrasings after a first pass here was still
- * incomplete -- an earlier version of this app got Evolution/Hero
- * disambiguation wrong from indirect sources twice before, so accuracy
- * here specifically gets extra scrutiny, not just a single search):
- *   - Evo Slot: "Only for Evolutions" -- Champions are NOT eligible here
- *     (Champions have never had a Card Evolution; Supercell has said this
- *     is unlikely to ever change, since the Champion Ability already fills
- *     that role).
- *   - Hero Slot: "For Heroes and Champions"
- *   - Wild Slot: "For Evolutions, Heroes, and Champions"
- *   - Regular slots (index 3-7, `role === null`): any real (non-Tower-Troop)
- *     card EXCEPT Champions -- confirmed via multiple independent sources
- *     ("Champion cards cannot be placed in any of the eight regular deck
- *     slots -- they can only be placed in the designated Hero and Wild
- *     slots"), matching how Champions have worked since their 2021
- *     introduction (always a dedicated special slot, never a plain one).
- *     This was the gap in an earlier pass here: Champions were correctly
- *     blocked from the Evolution slot but wrongly still allowed in 3-7.
- * `card.rarity === 'Champion'` is real, live data straight off the
- * Supercell API (see card_reference.csv's is_champion column / this app's
- * Card.rarity) -- confirmed no Champion card is ever also flagged
- * has_evolution/has_hero, so there's no overlap to reconcile.
+ * CORRECTED 2026-09-07 (real feedback, backed by real evidence): "non
+ * evo/hero cards can go anywhere in the deck, just check real decks from
+ * real users and you will see" -- the user pointed at their own real
+ * collected deck history (My Decks), where most real decks show NO
+ * Evolution or Hero use at all. That's only possible if the Evolution/
+ * Hero/Wild slots are real, LABELED positions in the deck editor but do
+ * NOT restrict which card can occupy them -- any ordinary card can sit in
+ * the "Evolution slot" position and simply plays as a normal card there;
+ * the evolution/hero effect only activates for whichever card is BOTH
+ * capable AND actually placed there. A prior pass here (see git history)
+ * had this backwards -- treating the label as an ELIGIBILITY GATE that
+ * blocked ineligible cards from the position at all, which is why the
+ * in-app deck builder couldn't reproduce decks real players build every
+ * day with zero Evolution/Hero cards in them.
+ *
+ * The rendering side already handled this correctly and needed no change:
+ * `assignmentFor` below already returns null (plain card, no crest/glow)
+ * for an ineligible card sitting in a special slot -- only the PLACEMENT
+ * restriction was wrong.
+ *
+ * What's still real and unchanged: Tower Troops have their own dedicated
+ * slot and are never eligible for any of the 8 real deck slots. Champions
+ * are still blocked from the 5 REGULAR slots specifically (a separate,
+ * independently-verified rule -- Champions have always required a
+ * dedicated Hero/Wild slot since their 2021 introduction) -- but ARE now,
+ * like every other card, freely placeable in the Evolution/Hero/Wild slots
+ * regardless of whether they're the "right" special type for that slot.
  */
 export function isCardEligibleForSlot(card: any, index: number): boolean {
   if (!card) return true
@@ -63,11 +66,8 @@ export function isCardEligibleForSlot(card: any, index: number): boolean {
   // single source of truth for "can this card go here" everywhere.
   if (card.type === 'Tower Troop') return false
   const role = SLOT_ROLE(index)
-  const isChampion = card.rarity === 'Champion'
-  if (!role) return !isChampion // regular slots: anything except Champions
-  if (role === 'evolution') return !!card.has_evolution
-  if (role === 'hero') return !!card.has_hero || isChampion
-  return !!card.has_evolution || !!card.has_hero || isChampion // wild
+  if (!role) return card.rarity !== 'Champion' // regular slots: anything except Champions
+  return true // Evolution/Hero/Wild: any real card -- see the correction above
 }
 
 function loadConnected(): { player: string; tag: string; levels: Record<string, number>; unlocked_slots?: SlotCounts } | null {
@@ -200,12 +200,12 @@ export function SlotBar({ slots }: { slots: ReturnType<typeof useSlots> }) {
  *   slot is what gets cleared/swapped-into, regardless of where the drag
  *   technically started.
  *
- * `cards` (the full card catalog, for has_evolution/has_hero/rarity/type
- * lookup) is required so every placement can be checked against real slot
- * eligibility (see isCardEligibleForSlot) -- e.g. a Champion dropped on the
- * Evolution slot or any regular slot, or a Tower Troop dropped on any of
- * the 8 real slots, is rejected (the deck is returned unchanged, same as
- * any other invalid drop) rather than silently accepted somewhere it can't
+ * `cards` (the full card catalog, for rarity/type lookup) is required so
+ * every placement can be checked against real slot eligibility (see
+ * isCardEligibleForSlot) -- e.g. a Champion dropped on a REGULAR slot, or a
+ * Tower Troop dropped on any of the 8 real slots, is rejected (the deck is
+ * returned unchanged, same as any other invalid drop) rather than silently
+ * accepted somewhere it can't
  * actually go in the real game. A swap is only completed if BOTH cards end
  * up somewhere they're genuinely eligible for.
  */
