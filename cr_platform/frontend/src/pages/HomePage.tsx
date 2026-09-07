@@ -6,6 +6,7 @@ import { whatsNextApi, metaApi } from '../utils/api'
 import Backdrop from '../components/Backdrop'
 import Collapsible from '../components/Collapsible'
 import SeasonBadge from '../components/SeasonBadge'
+import Tilt3D from '../components/Tilt3D'
 
 // Banner art is the real card icon from the CDN Supercell's own public API
 // already serves throughout this app (api-assets.clashroyale.com) -- the
@@ -98,19 +99,27 @@ function HowThisWorks() {
 // ranking." Now compact on mobile (smaller padding/icon, description
 // dropped -- the title alone is enough to navigate) and the original full
 // size from `sm:` up.
+// Real CSS-only 3D tilt (2026-09-07, "futuristic 3D" pass) replaces the old
+// flat whileHover={{y,scale}} lift -- Tilt3D's mouse-tracked perspective
+// tilt is the same proven, cheap (no 3D library) technique already used on
+// CardDetailModal's focal card and the Synergy Network graph, now applied
+// to the app's actual front door. whileTap kept for the press-down feel
+// tilt alone doesn't give.
 function MenuTile({ icon, title, desc, onClick }: { icon: React.ReactNode; title: string; desc: string; onClick: () => void }) {
   return (
-    <motion.button onClick={onClick}
-      whileHover={{ y: -6, scale: 1.03 }} whileTap={{ scale: 0.96 }}
-      className="bg-bg-surface border border-border rounded-2xl p-3 sm:p-5 text-left
-                 hover:border-gold hover:shadow-glow transition-all group w-full">
-      <div className="w-9 h-9 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl mb-1.5 sm:mb-3 flex items-center justify-center
-                       bg-gold/15 border border-gold/30 text-gold group-hover:scale-110 group-hover:bg-gold/25 transition-all">
-        {icon}
-      </div>
-      <div className="font-semibold text-white text-sm sm:text-lg sm:mb-1">{title}</div>
-      <div className="hidden sm:block text-text-secondary text-sm">{desc}</div>
-    </motion.button>
+    <Tilt3D maxTilt={10} scale={1.04} glare className="w-full">
+      <motion.button onClick={onClick} whileTap={{ scale: 0.96 }}
+        className="bg-bg-surface border border-border rounded-2xl p-3 sm:p-5 text-left
+                   hover:border-gold hover:shadow-glow transition-colors group w-full overflow-hidden">
+        <div className="w-9 h-9 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl mb-1.5 sm:mb-3 flex items-center justify-center
+                         bg-gold/15 border border-gold/30 text-gold group-hover:scale-110 group-hover:bg-gold/25 transition-all"
+          style={{ transform: 'translateZ(20px)' }}>
+          {icon}
+        </div>
+        <div className="font-semibold text-white text-sm sm:text-lg sm:mb-1" style={{ transform: 'translateZ(12px)' }}>{title}</div>
+        <div className="hidden sm:block text-text-secondary text-sm">{desc}</div>
+      </motion.button>
+    </Tilt3D>
   )
 }
 
@@ -132,14 +141,36 @@ export default function HomePage() {
   ]
 
   return (
-    <div className="relative z-10 min-h-[calc(100vh-56px)] flex flex-col">
+    <div className="relative z-10 min-h-[calc(100vh-56px)] flex flex-col overflow-hidden">
       <Backdrop density={18} />
+      {/* Real depth cue behind the hero -- two large, softly-blurred glow
+          orbs (gold + royale-blue, the app's own existing brand tokens, not
+          new colors) drifting slowly at different rates. Pure CSS
+          (radial-gradient + the driftSlow keyframe), so this is free
+          performance-wise -- no canvas/WebGL, matching "very fast rendering". */}
+      <div className="absolute inset-0 pointer-events-none" aria-hidden>
+        <div className="absolute -top-24 left-1/4 w-[32rem] h-[32rem] rounded-full opacity-20 blur-[100px] animate-drift-slow"
+          style={{ background: 'radial-gradient(circle, #D4AF37, transparent 70%)' }} />
+        <div className="absolute top-1/3 right-1/4 w-[28rem] h-[28rem] rounded-full opacity-[0.15] blur-[100px] animate-drift-slow"
+          style={{ background: 'radial-gradient(circle, #4A6FE0, transparent 70%)', animationDelay: '-7s' }} />
+      </div>
       {/* Hero */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-16 text-center">
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="w-full">
           <div className="text-6xl mb-4">⚔️</div>
           <h1 className="flex items-baseline justify-center gap-3 mb-3 flex-wrap">
-            <span className="font-display text-4xl md:text-5xl text-gold tracking-wide" style={{ WebkitTextStroke: '1px rgba(0,0,0,0.4)' }}>
+            {/* Slow gold shimmer sweep across the wordmark -- a moving
+                gradient clipped to the text, not a new color, just motion
+                on the existing gold. Respects reduced-motion via the plain
+                gold fallback color underneath the gradient layer. */}
+            <span
+              className="font-display text-4xl md:text-5xl tracking-wide bg-clip-text text-transparent animate-shimmer motion-reduce:animate-none motion-reduce:text-gold"
+              style={{
+                WebkitTextStroke: '1px rgba(0,0,0,0.4)',
+                backgroundImage: 'linear-gradient(90deg, #B8952C 0%, #D4AF37 25%, #F5DA81 50%, #D4AF37 75%, #B8952C 100%)',
+                backgroundSize: '200% 100%',
+              }}
+            >
               Royale
             </span>
             <span className="font-pro font-medium text-3xl md:text-4xl text-text-secondary tracking-tight">IQ</span>
