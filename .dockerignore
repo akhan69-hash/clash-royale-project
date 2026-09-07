@@ -17,6 +17,16 @@ cr_platform/frontend/dist/
 data/collected_battles.csv
 data/crawl_state.json
 data/raw_matches/
+# The local SQLite personal-data archive (2026-09-07, see
+# battle_collector.py's ARCHIVE_DB_PATH) -- same reasoning as the CSV above,
+# lives on the host's persistent volume, not the image. Found this one
+# missing from this list after it made a routine deploy's "unpacking to
+# image" step balloon from ~1s to 135s (baking a multi-GB, constantly-
+# growing, already-bind-mounted file into every image build is pure waste).
+data/battles_archive.db
+data/battles_archive.db-wal
+data/battles_archive.db-shm
+data/lifetime_totals.json
 
 # Misc dev-only tooling not needed at runtime
 cr_tools/
