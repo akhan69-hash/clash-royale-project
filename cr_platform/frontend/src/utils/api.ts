@@ -228,6 +228,11 @@ export const metaApi = {
   ) =>
     api.get('/meta/decks', { params: { limit, arena, sort_by: sortBy, card, variant, page, strategy } }).then(r => r.data),
 
+  // Real win-rate/usage for ONE exact deck (by card set) -- not a ranked
+  // listing. Powers win-rate/usage on decks shown as-is (Current Deck, a
+  // battle's Opponent Deck) rather than browsed from a Top-Decks-style page.
+  deckLookup: (cards: string[]) => api.get('/meta/deck-lookup', { params: { cards: cards.join(',') } }).then(r => r.data),
+
   // Real deck strategies (primary win condition + flavor, e.g. "Hog Rider (cycle)")
   // with how many real decks/games back each one -- powers strategy filter dropdowns.
   deckStrategies: () => api.get('/meta/deck-strategies').then(r => r.data),

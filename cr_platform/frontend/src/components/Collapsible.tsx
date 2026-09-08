@@ -52,6 +52,17 @@ const ACCENT_TEXT: Record<string, string> = {
   success: 'text-success',
   crimson: 'text-crimson',
 }
+// Raw hex per accent, for the `tempting` variant's gradient border/glow --
+// Tailwind's border-accent/40 etc. can't be interpolated into an inline
+// linear-gradient, so this mirrors the same tokens (tailwind.config.js) as
+// real hex instead.
+const ACCENT_HEX: Record<string, string> = {
+  border: '#6B4242',
+  gold: '#D4AF37',
+  royale: '#4A6FE0',
+  success: '#4CAF50',
+  crimson: '#C23B3B',
+}
 
 function loadPersisted(key: string, fallback: boolean): boolean {
   try {
@@ -62,10 +73,24 @@ function loadPersisted(key: string, fallback: boolean): boolean {
   }
 }
 
-export default function Collapsible({ title, defaultOpen = false, compact = false, accent = 'border', persistKey, children }: {
+export default function Collapsible({
+  title, defaultOpen = false, compact = false, accent = 'border', persistKey, children,
+  tempting = false, teaser, icon,
+}: {
   title: ReactNode; defaultOpen?: boolean; compact?: boolean
   accent?: 'border' | 'gold' | 'royale' | 'success' | 'crimson'
   persistKey?: string; children: ReactNode
+  /** Real feedback (2026-09-07): "minimized... but has a catchy font or
+   * theme or colors and concepts to it, which user can click if they are
+   * tempted... make it tempting" -- for secondary-but-genuinely-interesting
+   * content (a player's last-25-real-battles history, shard collections)
+   * that shouldn't read as just another plain settings toggle. Renders a
+   * glowing gradient-bordered trigger with an icon and one-line `teaser`
+   * instead of the plain chevron+label row. Ignored by `compact` (nothing to
+   * be tempting about in a tiny inline "More details" toggle). */
+  tempting?: boolean
+  teaser?: ReactNode
+  icon?: ReactNode
 }) {
   const [open, setOpen] = useState(() => persistKey ? loadPersisted(persistKey, defaultOpen) : defaultOpen)
   const toggle = () => setOpen(o => {
@@ -73,6 +98,31 @@ export default function Collapsible({ title, defaultOpen = false, compact = fals
     if (persistKey) { try { localStorage.setItem(`cr_section_open_${persistKey}`, next ? '1' : '0') } catch { /* ignore */ } }
     return next
   })
+  if (tempting && !compact) {
+    const hex = ACCENT_HEX[accent]
+    return (
+      <div className="relative mb-6 rounded-2xl p-px overflow-hidden"
+        style={{ background: open ? hex + '30' : `linear-gradient(120deg, ${hex}, transparent 65%, ${hex}90)` }}>
+        <div className="rounded-2xl bg-bg-surface p-4">
+          <button onClick={toggle} className="flex items-center gap-3 w-full text-left group">
+            {icon && (
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-lg
+                               ${!open ? 'animate-pulse-glow' : ''}`}
+                style={{ background: `${hex}22`, color: hex, boxShadow: !open ? `0 0 16px 1px ${hex}55` : undefined }}>
+                {icon}
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <div className={`text-sm font-bold ${ACCENT_TEXT[accent]}`}>{title}</div>
+              {!open && teaser && <div className="text-text-muted text-xs truncate mt-0.5">{teaser}</div>}
+            </div>
+            <ChevronDown size={16} className={`text-text-muted transition-transform shrink-0 ${open ? 'rotate-180' : ''}`} />
+          </button>
+          {open && <div className="mt-3">{children}</div>}
+        </div>
+      </div>
+    )
+  }
   if (compact) {
     return (
       <div>

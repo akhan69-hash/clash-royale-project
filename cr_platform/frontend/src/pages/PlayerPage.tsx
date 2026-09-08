@@ -9,9 +9,12 @@ import CardImage, { CardName } from '../components/CardImage'
 import { useCardDetail } from '../contexts/CardDetailContext'
 import CounterDecksList from '../components/CounterDecksList'
 import Backdrop from '../components/Backdrop'
+import PageArtBackdrop from '../components/PageArtBackdrop'
 import Collapsible from '../components/Collapsible'
 import TowerTroopSection from '../components/TowerTroopSection'
 import FavoriteButton from '../components/FavoriteButton'
+import { CopyDeckButton } from '../components/DeckBuilderKit'
+import DeckStatsInline from '../components/DeckStatsInline'
 import Pagination from '../components/Pagination'
 import { friendlyPlayerError } from '../utils/friendlyError'
 import NoPlayerYet from '../components/NoPlayerYet'
@@ -25,6 +28,15 @@ import { addRecentPlayer, getDefaultPlayerTag, forgetDefaultPlayerTag } from '..
 // a real complaint from mobile use. Matches the same page_size default now
 // used server-side for the counter-deck lists (see backend/routers/decks.py).
 const MY_DECKS_PAGE_SIZE = 4
+
+// Player Lookup's own visual identity (2026-09-07, new-season theme +
+// "every feature will have its own identity and art and font" pass) --
+// royale blue, the same token Collapsible's own `accent="royale"` already
+// documents as meaning "this specific player's own data" (as opposed to
+// gold for community/meta data) -- and Minion Giant, the season's real new
+// card, as the signature blurred background art (see PageArtBackdrop).
+const PLAYER_ACCENT = '#4A6FE0'
+const PLAYER_ART_CARD = 'Minion Giant'
 
 export default function PlayerPage() {
   const { openCard } = useCardDetail()
@@ -94,6 +106,7 @@ export default function PlayerPage() {
   })
 
   const { data: cardsData } = useQuery({ queryKey: ['cards'], queryFn: () => cardsApi.getAll() })
+  const pageArtUrl = cardsData?.items?.find(c => c.name === PLAYER_ART_CARD)?.image_url
   const imageFor = (name: string) => cardsData?.items?.find(c => c.name === name)?.image_url ?? undefined
   const rarityFor = (name: string) => cardsData?.items?.find(c => c.name === name)?.rarity ?? undefined
   const evolutionImageFor = (name: string) => cardsData?.items?.find(c => c.name === name)?.evolution_image_url ?? undefined
@@ -146,8 +159,12 @@ export default function PlayerPage() {
   return (
     <div className="relative z-10 max-w-5xl mx-auto px-4 py-6">
       <Backdrop density={10} />
+      <PageArtBackdrop imageUrl={pageArtUrl} accent={PLAYER_ACCENT} />
       <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
-        <h1 className="text-2xl font-bold text-accent">Player Lookup</h1>
+        <h1 className="text-2xl flex items-baseline gap-2">
+          <span className="font-display tracking-wide" style={{ color: PLAYER_ACCENT }}>Player</span>
+          <span className="font-bold text-text-secondary">Lookup</span>
+        </h1>
         <SeasonBadge />
       </div>
 
@@ -278,9 +295,10 @@ export default function PlayerPage() {
           {/* Current Deck */}
           {data.current_deck?.length > 0 && (
             <div className="bg-bg-surface border border-border rounded-xl p-5">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
                 <h3 className="font-semibold text-white">Current Deck</h3>
                 <div className="flex items-center gap-2">
+                  <CopyDeckButton cards={data.current_deck.map((c: any) => c.name)} />
                   <FavoriteButton deck={{
                     cards: data.current_deck.map((c: any) => c.name), label: `${data.name}'s Current Deck`,
                     evolved_cards: data.current_deck.filter((c: any) => c.is_evolved).map((c: any) => c.name),
@@ -292,6 +310,9 @@ export default function PlayerPage() {
                     Show counters for this deck
                   </button>
                 </div>
+              </div>
+              <div className="mb-3">
+                <DeckStatsInline cards={data.current_deck.map((c: any) => c.name)} />
               </div>
               {/* Was size="md" + showStats (hitpoints/DPS printed under every
                   card) -- at 4-per-row on mobile the fixed-width md tile
@@ -457,7 +478,9 @@ export default function PlayerPage() {
               their current deck. Placed after My Decks -- a collection-style
               breakdown is secondary to seeing the decks they've actually played. */}
           {data.cards?.some((c: any) => c.owns_evolution_shards || c.owns_hero_unlock) && (
-            <Collapsible title={`⬆★ Evolution / Hero Shards Owned (${data.cards.filter((c: any) => c.owns_evolution_shards || c.owns_hero_unlock).length})`}>
+            <Collapsible tempting accent="royale" icon="⬆★" persistKey="player-shards"
+              title={`Evolution / Hero Shards Owned (${data.cards.filter((c: any) => c.owns_evolution_shards || c.owns_hero_unlock).length})`}
+              teaser="See every card this player has invested real shards into">
               <p className="text-text-muted text-xs mb-3">
                 Real shard investment from this player's full card collection. For cards capable of both systems
                 (Knight, Musketeer, Wizard, Valkyrie), the API doesn't say which pool the shards apply to, so both
@@ -497,8 +520,9 @@ export default function PlayerPage() {
               detail moved into a tooltip instead of always-visible text) --
               now fits 4 columns without needing to scroll on a real phone. */}
           {battlesData?.battles?.length > 0 && (
-            <div className="bg-bg-surface border border-border rounded-xl p-5">
-              <h3 className="font-semibold text-white mb-3">Recent Battles</h3>
+            <Collapsible tempting accent="royale" icon="⚔️" persistKey="player-recent-battles"
+              title={`Last ${battlesData.battles.length} Real Battles`}
+              teaser="Win/loss, opponents, tower HP -- pick one to find its counters below">
               <p className="text-text-muted text-xs mb-3">Click a row to pick that opponent for the counter suggester below.</p>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -544,18 +568,28 @@ export default function PlayerPage() {
                   ✓ {battlesData.newly_collected} new battles saved toward the live training dataset.
                 </p>
               )}
-            </div>
+            </Collapsible>
           )}
 
           {/* Selected opponent's deck (from the row picked above) */}
           {selectedOpponentDeck.length > 0 && (
             <div className="bg-bg-surface border border-border rounded-xl p-5">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
                 <h3 className="font-semibold text-white">Selected Opponent: {selectedOpponentName}</h3>
-                <button onClick={loadOppCounters}
-                  className="text-xs bg-accent/20 text-accent px-3 py-1.5 rounded-lg hover:bg-accent/30 transition-colors">
-                  Show counters for their deck
-                </button>
+                <div className="flex items-center gap-2">
+                  <CopyDeckButton cards={selectedOpponentDeck} />
+                  <FavoriteButton deck={{
+                    cards: selectedOpponentDeck, label: `${selectedOpponentName}'s Deck`,
+                    evolved_cards: selectedOpponentEvolved, hero_cards: selectedOpponentHero, ambiguous_cards: selectedOpponentAmbiguous,
+                  }} />
+                  <button onClick={loadOppCounters}
+                    className="text-xs bg-accent/20 text-accent px-3 py-1.5 rounded-lg hover:bg-accent/30 transition-colors">
+                    Show counters for their deck
+                  </button>
+                </div>
+              </div>
+              <div className="mb-2">
+                <DeckStatsInline cards={selectedOpponentDeck} />
               </div>
               <p className="text-text-muted text-[10px] mb-2">
                 Real Evolution/Hero usage for this specific battle -- ⬆ evolved, ★ hero, ? evolved-or-hero'd (can't

@@ -8,10 +8,13 @@ import CardImage, { CardName } from '../components/CardImage'
 import { useCardDetail } from '../contexts/CardDetailContext'
 import CounterDecksList from '../components/CounterDecksList'
 import Backdrop from '../components/Backdrop'
+import PageArtBackdrop from '../components/PageArtBackdrop'
 import Collapsible from '../components/Collapsible'
 import TowerTroopSection from '../components/TowerTroopSection'
 import SwipeCarousel from '../components/SwipeCarousel'
 import FavoriteButton from '../components/FavoriteButton'
+import { CopyDeckButton } from '../components/DeckBuilderKit'
+import DeckStatsInline from '../components/DeckStatsInline'
 import Pagination from '../components/Pagination'
 import { friendlyPlayerError } from '../utils/friendlyError'
 import TipsCarousel, { type Tip } from '../components/TipsCarousel'
@@ -218,6 +221,15 @@ export default function CoachingPage() {
   })
   const { data: allCards } = useQuery({ queryKey: ['cards'], queryFn: () => cardsApi.getAll() })
   const imageFor = (n: string) => allCards?.items?.find((c: Card) => c.name === n)?.image_url
+  // Coach's own visual identity (2026-09-07, new-season theme + "every
+  // feature will have its own identity and art and font" pass) -- crimson,
+  // Collapsible's own existing token for "tips/guidance/advisory content"
+  // (exactly what this page is), distinct from Player Lookup's royale blue.
+  // Hero Ice Wizard's real new ability (added this same session) as the
+  // signature blurred art here, distinct from Player's Minion Giant.
+  const COACH_ACCENT = '#C23B3B'
+  const coachArtUrl = allCards?.items?.find((c: Card) => c.name === 'Ice Wizard')?.hero_image_url
+    ?? allCards?.items?.find((c: Card) => c.name === 'Ice Wizard')?.image_url
   const rarityFor = (n: string) => allCards?.items?.find((c: Card) => c.name === n)?.rarity
   const evolutionImageFor = (n: string) => allCards?.items?.find((c: Card) => c.name === n)?.evolution_image_url
   const heroImageFor = (n: string) => allCards?.items?.find((c: Card) => c.name === n)?.hero_image_url
@@ -657,7 +669,10 @@ export default function CoachingPage() {
   return (
     <div className="relative z-10 max-w-5xl mx-auto px-4 py-6">
       <Backdrop density={10} />
-      <h1 className="text-2xl font-bold text-accent mb-1">🎓 Coach</h1>
+      <PageArtBackdrop imageUrl={coachArtUrl} accent={COACH_ACCENT} />
+      <h1 className="text-2xl flex items-baseline gap-2 mb-1">
+        <span className="font-display tracking-wide" style={{ color: COACH_ACCENT }}>🎓 Coach</span>
+      </h1>
       <p className="text-text-secondary text-sm mb-6">
         Personal coaching built entirely from your real profile, real battle history, and the live meta.
       </p>
@@ -687,7 +702,8 @@ export default function CoachingPage() {
         <div className="mt-4 space-y-5">
           <NoPlayerYet context="coach" />
           {metaPulse?.decks?.length > 0 && (
-            <Collapsible title="📈 Top Real Decks Winning Right Now" accent="gold" persistKey="coach-top-decks-preview" defaultOpen>
+            <Collapsible tempting icon="📈" title="Top Real Decks Winning Right Now" accent="gold" persistKey="coach-top-decks-preview"
+              teaser="See the live meta before you even look up a player">
               <p className="text-text-muted text-xs mb-3">
                 What's actually working across every real collected battle -- look up your own player tag above for personalized coaching on top of this.
               </p>
@@ -730,7 +746,8 @@ export default function CoachingPage() {
             </div>
           )}
           {currentArenaDecks?.decks?.length > 0 && (
-            <Collapsible title={`What's winning at ${arenaInfo?.arena} right now`} accent="gold" persistKey="coach-arena-decks" defaultOpen>
+            <Collapsible tempting icon="🏟️" title={`What's Winning at ${arenaInfo?.arena} Right Now`} accent="gold" persistKey="coach-arena-decks"
+              teaser="Real decks other players in your own arena are using">
               <p className="text-text-muted text-xs mb-3">Real decks from real battles at your arena -- swipe or use the arrows to go through them one at a time.</p>
               <ArenaDeckSortButtons sortBy={currentArenaSort} onChange={setCurrentArenaSort} />
               <SwipeCarousel items={currentArenaDecks.decks} keyFor={(_d, i) => i}>
@@ -747,6 +764,10 @@ export default function CoachingPage() {
           {/* 1. Deck Health */}
           {deckHealth && (
             <Collapsible title="Deck Health Check" accent="royale" persistKey="coach-deck-health" defaultOpen>
+              <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+                <DeckStatsInline cards={deckNames} />
+                <CopyDeckButton cards={deckNames} />
+              </div>
               <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 mb-3">
                 {deckNames.map(n => (
                   <CardImage key={n} name={n} imageUrl={imageFor(n)} rarity={rarityFor(n)} onClick={() => openCard(n)}
@@ -929,7 +950,8 @@ export default function CoachingPage() {
             const shownEvo = showAllEvoHeroDecks ? evoDecks : evoDecks.slice(0, EVO_HERO_PREVIEW_COUNT)
             const shownHero = showAllEvoHeroDecks ? heroDecks : heroDecks.slice(0, EVO_HERO_PREVIEW_COUNT)
             return (
-              <Collapsible title="🃏 Real decks for your Evolutions & Heroes" accent="royale" persistKey="coach-evo-hero-decks" defaultOpen>
+              <Collapsible tempting icon="🃏" title="Real Decks for Your Evolutions & Heroes" accent="royale" persistKey="coach-evo-hero-decks"
+                teaser={`The best deck for each of your ${totalDecks} owned Evolution/Hero variants`}>
                 <p className="text-text-muted text-xs mb-3">
                   The best real win-rate deck for each Evolution/Hero variant you actually own shards/unlocks for --
                   {' '}{evoDecks.length} evolution deck{evoDecks.length === 1 ? '' : 's'} and {heroDecks.length} hero deck{heroDecks.length === 1 ? '' : 's'}.
@@ -977,7 +999,8 @@ export default function CoachingPage() {
               </div>
             </div>
           ) : quickTips.length > 0 && (
-            <Collapsible title="💡 Quick Real-Data Tips" accent="royale" persistKey="coach-quick-tips" defaultOpen>
+            <Collapsible tempting icon="💡" title="Quick Real-Data Tips" accent="royale" persistKey="coach-quick-tips"
+              teaser="Real per-card win rates and elixir-leak benchmarks, swipeable">
               <TipsCarousel tips={quickTips} />
             </Collapsible>
           )}
@@ -992,7 +1015,8 @@ export default function CoachingPage() {
             </div>
           )}
           {metaPulse?.decks?.length > 0 && (
-            <Collapsible title="📈 Meta Pulse: Real Decks Winning Most Right Now" accent="gold" persistKey="coach-meta-pulse" defaultOpen>
+            <Collapsible tempting icon="🌐" title="Meta Pulse: Real Decks Winning Most Right Now" accent="gold" persistKey="coach-meta-pulse"
+              teaser="Top real decks app-wide, beyond just your own arena">
               <p className="text-text-muted text-xs mb-3">
                 Top real decks app-wide, for inspiration beyond your own arena.
               </p>
@@ -1015,7 +1039,8 @@ export default function CoachingPage() {
               the deep-dive coaching, gated behind the planned premium tier */}
           <PremiumGate unlocked={unlocked} onUnlock={unlock}>
           {lossPatterns && lossPatterns.total_losses > 0 && (
-            <Collapsible title="Loss Patterns" accent="royale" persistKey="coach-loss-patterns" defaultOpen>
+            <Collapsible tempting icon="💥" title={`Loss Patterns: Last ${lossPatterns.total_losses} Real Losses`} accent="crimson" persistKey="coach-loss-patterns"
+              teaser="What you're actually losing to, ranked by how often">
               <p className="text-text-muted text-xs mb-3">
                 From your last {lossPatterns.total_losses} real losses -- what you're actually losing to.
               </p>
@@ -1066,7 +1091,8 @@ export default function CoachingPage() {
             </div>
           )}
           {arenaInfo?.next_arena && (
-            <Collapsible title={`Trophy Push: ${arenaInfo.arena} → ${arenaInfo.next_arena}`} accent="success" persistKey="coach-trophy-push" defaultOpen>
+            <Collapsible tempting icon="🏆" title={`Trophy Push: ${arenaInfo.arena} → ${arenaInfo.next_arena}`} accent="success" persistKey="coach-trophy-push"
+              teaser="What's actually common one arena up, from real battles">
               <p className="text-text-muted text-xs mb-3">What's actually common one arena up, from real battles.</p>
               {nextArenaCards?.cards?.length > 0 && (
                 <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 mb-4">
@@ -1095,7 +1121,8 @@ export default function CoachingPage() {
 
           {/* 5. Card Level Priorities */}
           {levelPriorities.length > 0 && (
-            <Collapsible title="Upgrade Priorities" accent="success" persistKey="coach-upgrade-priorities" defaultOpen>
+            <Collapsible tempting icon="⬆️" title="Upgrade Priorities" accent="success" persistKey="coach-upgrade-priorities"
+              teaser="Which of your deck's cards to level up first">
               <p className="text-text-muted text-xs mb-3">Your deck's cards, furthest from max level first -- weigh against real win rate/efficiency yourself.</p>
               <table className="w-full text-sm">
                 <thead>

@@ -4,7 +4,7 @@ from pathlib import Path
 from functools import lru_cache
 
 import pandas as pd
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, HTTPException
 
 from services.card_service import get_card_image_url, get_all_cards
 from services.battle_collector import get_collection_stats
@@ -275,6 +275,56 @@ def card_arena_eligibility(name: str):
 # compute the more expensive per-deck metrics only for that pool -- same
 # "widen then rerank" shape as /decks/counter's Wilson-score reranking.
 DECK_METRIC_CANDIDATE_POOL = 300
+
+
+@router.get("/deck-lookup")
+def deck_lookup(cards: str = Query(..., description="Comma-separated list of exactly 8 card names")):
+    """Real win-rate/usage for ONE exact deck, by card set -- not a ranked
+    Top-Decks-style listing. Powers the win-rate/usage display on decks that
+    are shown as-is rather than browsed (real feedback, 2026-09-07: "My deck
+    and Opponent deck does not have copy and paste option. Plus win rate and
+    usage does not show on those decks") -- Current Deck and a battle's
+    Opponent Deck both just render whatever the live API/battle log
+    returned, with no existing lookup into the real aggregate stats every
+    other deck display already draws from (deck_archetypes_live.csv). Same
+    real data source and sorted-card-set key as /decks, just a single exact
+    match instead of a ranked page."""
+    card_list = [c.strip() for c in cards.split(",") if c.strip()]
+    if len(card_list) != 8:
+        raise HTTPException(status_code=400, detail="Exactly 8 card names required")
+    deck_key = ";".join(sorted(card_list))
+
+    df = _load_archetypes_df()
+    if df is None:
+        return {"found": False}
+    row = df[df["deck"] == deck_key]
+    if row.empty:
+        return {"found": False}
+    row = row.iloc[0]
+
+    elixir_costs = get_elixir_costs()
+    costs = [elixir_costs.get(c, 0) for c in card_list]
+    avg_elixir = round(sum(costs) / len(costs), 1)
+    cycle_cost = sum(sorted(costs)[:4])
+    wins_val = row.get("wins")
+    estimated_win_rate = row.get("estimated_win_rate")
+
+    return {
+        "found": True,
+        "frequency": int(row["frequency"]),
+        "wins": int(wins_val) if pd.notna(wins_val) else None,
+        "win_rate": round(float(row["win_rate"]) * 100, 2),
+        "estimated_win_rate": round(float(estimated_win_rate) * 100, 2) if pd.notna(estimated_win_rate) else None,
+        "avg_elixir": avg_elixir,
+        "cycle_cost": cycle_cost,
+        "typical_evolution": _clean(row.get("typical_evolution")),
+        "evolution_rate_pct": _clean(row.get("evolution_rate_pct")),
+        "typical_hero": _clean(row.get("typical_hero")),
+        "hero_rate_pct": _clean(row.get("hero_rate_pct")),
+        "typical_ambiguous": _clean(row.get("typical_ambiguous")),
+        "ambiguous_rate_pct": _clean(row.get("ambiguous_rate_pct")),
+        **_strategy_fields(card_list),
+    }
 
 
 @router.get("/decks")

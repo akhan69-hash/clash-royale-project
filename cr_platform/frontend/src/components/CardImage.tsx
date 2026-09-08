@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef, type DragEvent } from 'react'
+import { useState, useEffect, useRef, type DragEvent, type MouseEvent as ReactMouseEvent } from 'react'
+import { setLastCardClickOrigin } from '../utils/cardClickOrigin'
 
 export const RARITY_COLORS: Record<string, string> = {
   Common: '#8B7355',
@@ -254,7 +255,10 @@ export default function CardImage({
 
   return (
     <div
-      onClick={onClick}
+      onClick={onClick ? (e: ReactMouseEvent<HTMLDivElement>) => {
+        setLastCardClickOrigin(e.currentTarget.getBoundingClientRect())
+        onClick()
+      } : undefined}
       draggable={dragEnabled}
       onDragStart={dragEnabled ? (e) => {
         setIsDragging(true)
@@ -345,7 +349,7 @@ export default function CardImage({
           <button
             type="button"
             draggable={false}
-            onClick={(e) => { e.stopPropagation(); onInfoClick() }}
+            onClick={(e) => { e.stopPropagation(); setLastCardClickOrigin(e.currentTarget.getBoundingClientRect()); onInfoClick() }}
             title="Card details"
             className="absolute top-0.5 right-0.5 z-30 w-3.5 h-3.5 rounded-full flex items-center justify-center
                        bg-black/50 hover:bg-black/80 text-white/80 hover:text-white text-[8px] font-bold leading-none

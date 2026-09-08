@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useMemo, type ReactNode } from 're
 import { useQuery } from '@tanstack/react-query'
 import { cardsApi, Card } from '../utils/api'
 import CardDetailModal from '../components/CardDetailModal'
+import { consumeLastCardClickOrigin } from '../utils/cardClickOrigin'
 
 /**
  * Global "click any card, anywhere, to see its details" provider -- mounted
@@ -21,6 +22,11 @@ const CardDetailCtx = createContext<{ openCard: (name: string) => void } | null>
 
 export function CardDetailProvider({ children }: { children: ReactNode }) {
   const [openName, setOpenName] = useState<string | null>(null)
+  // Where on screen the card that's about to open was actually clicked from
+  // (see utils/cardClickOrigin.ts) -- read the instant openCard() runs, so
+  // the modal can animate in from, and close back into, that exact spot
+  // instead of a generic centered fade.
+  const [origin, setOrigin] = useState<{ centerX: number; centerY: number } | null>(null)
   const { data } = useQuery({ queryKey: ['cards'], queryFn: () => cardsApi.getAll() })
 
   const card: Card | undefined = useMemo(
@@ -28,10 +34,15 @@ export function CardDetailProvider({ children }: { children: ReactNode }) {
     [openName, data],
   )
 
+  const openCard = (name: string) => {
+    setOrigin(consumeLastCardClickOrigin())
+    setOpenName(name)
+  }
+
   return (
-    <CardDetailCtx.Provider value={{ openCard: setOpenName }}>
+    <CardDetailCtx.Provider value={{ openCard }}>
       {children}
-      {card && <CardDetailModal card={card} onClose={() => setOpenName(null)} />}
+      {card && <CardDetailModal card={card} origin={origin} onClose={() => setOpenName(null)} />}
     </CardDetailCtx.Provider>
   )
 }

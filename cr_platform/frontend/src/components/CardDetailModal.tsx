@@ -8,6 +8,11 @@ import { RARITY_COLORS, CardName } from './CardImage'
 interface Props {
   card: Card
   onClose: () => void
+  /** Screen position of the thumbnail that was actually clicked to open this
+   * card (see utils/cardClickOrigin.ts) -- when known, the modal grows out of
+   * and shrinks back into that exact point instead of a generic centered
+   * fade. Null for the few call sites that don't go through CardImage. */
+  origin?: { centerX: number; centerY: number } | null
 }
 
 type ViewMode = 'base' | 'evolved' | 'hero'
@@ -38,6 +43,12 @@ type ViewMode = 'base' | 'evolved' | 'hero'
 // tilt wasn't the part of this modal real feedback was ever specifically
 // asking to keep once it become a comfort issue. Static, still large,
 // still real card art -- just no per-frame recomputation.
+// No-border-line update (2026-09-07, real feedback: "No extra borders Just
+// blur the background") -- the 3px rarity-colored ring around this card and
+// the modal panel's own border below are both gone. The rarity color still
+// reads clearly through a soft glow (boxShadow with no spread-hugging
+// border) and the tinted backdrop gradient; separation from the rest of the
+// page now comes entirely from the backdrop blur, not a drawn line.
 function FocalCard({ src, alt, rarityColor, contain }: { src?: string | null; alt: string; rarityColor: string; contain: boolean }) {
   const [imgError, setImgError] = useState(false)
   useEffect(() => { setImgError(false) }, [src])
@@ -45,10 +56,9 @@ function FocalCard({ src, alt, rarityColor, contain }: { src?: string | null; al
   return (
     <div className="mx-auto">
       <div
-        className="relative w-40 h-52 rounded-2xl overflow-hidden shadow-glow"
+        className="relative w-40 h-52 rounded-2xl overflow-hidden"
         style={{
-          border: `3px solid ${rarityColor}`,
-          boxShadow: `0 0 20px 2px ${rarityColor}70`,
+          boxShadow: `0 0 32px 6px ${rarityColor}55, 0 8px 30px rgba(0,0,0,0.5)`,
           background: `linear-gradient(160deg, ${rarityColor}22, ${rarityColor}55)`,
         }}
       >
@@ -63,7 +73,7 @@ function FocalCard({ src, alt, rarityColor, contain }: { src?: string | null; al
   )
 }
 
-export default function CardDetailModal({ card, onClose }: Props) {
+export default function CardDetailModal({ card, onClose, origin }: Props) {
   const [view, setView] = useState<ViewMode>('base')
   // Some very recently-added Hero cards (Hero Valkyrie/Berserker, Season 86)
   // have a real heroMedium URL in the official catalog, but the actual image
@@ -101,22 +111,35 @@ export default function CardDetailModal({ card, onClose }: Props) {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        {/* Backdrop */}
-        <motion.div className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={onClose}/>
+      <div className="fixed inset-0 z-50">
+        {/* Backdrop -- a pure blur+dim fade, independent of the card's own
+            grow/shrink animation below (real feedback 2026-09-07: "just blur
+            the background and close just takes the 3d card back into where
+            i clicked it from" -- two separate layers on purpose, so the
+            background doesn't shrink along with the card). */}
+        <motion.div className="absolute inset-0 bg-black/75 backdrop-blur-md"
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}/>
 
-        {/* Modal -- was a 2px rarity-colored border ("extra frame" per real
-            feedback, not needed on a now much simpler popup); a plain
-            neutral border matches every other card/panel in the app. Now a
-            fixed-height flex column: the tilting card stays put, only the
-            info panel below it scrolls (see the big comment above). */}
+        {/* Full-viewport layer that does the actual grow/shrink-to-origin
+            animation. transformOrigin in raw viewport px works unmodified
+            here because this layer itself spans the whole viewport (inset-0,
+            its own top-left already at viewport (0,0)) -- no need to measure
+            the panel's own rendered size/position to converge the scale on
+            the exact spot the user clicked (see utils/cardClickOrigin.ts). */}
         <motion.div
-          className="relative bg-bg-surface rounded-2xl border border-border shadow-card w-full max-w-lg max-h-[85vh] flex flex-col z-10"
-          initial={{ opacity: 0, scale: 0.9, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.9, y: 20 }}
+          className="absolute inset-0 flex items-center justify-center p-4 pointer-events-none"
+          style={{ transformOrigin: origin ? `${origin.centerX}px ${origin.centerY}px` : '50% 50%' }}
+          initial={{ opacity: 0, scale: origin ? 0.06 : 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: origin ? 0.06 : 0.9 }}
+          transition={{ type: 'spring', damping: 24, stiffness: 260 }}
         >
+        {/* Modal panel -- no border line (real feedback: "No extra
+            borders"); separation from the page comes from the backdrop blur
+            layer above, not a drawn line here. Still a fixed-height flex
+            column: the focal card stays put, only the info panel below it
+            scrolls (see the big comment above). */}
+        <div className="relative bg-bg-surface rounded-2xl shadow-card w-full max-w-lg max-h-[85vh] flex flex-col pointer-events-auto">
           <button onClick={onClose}
             className="absolute top-3 right-3 z-20 p-1.5 rounded-lg bg-black/40 hover:bg-black/70 text-white/80 hover:text-white transition-colors">
             <X size={18}/>
@@ -220,6 +243,7 @@ export default function CardDetailModal({ card, onClose }: Props) {
               </div>
             )}
           </div>
+        </div>
         </motion.div>
       </div>
     </AnimatePresence>
