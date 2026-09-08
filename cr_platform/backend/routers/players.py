@@ -1,4 +1,5 @@
 import itertools
+import time
 import pandas as pd
 from fastapi import APIRouter, HTTPException, Header
 import httpx
@@ -15,6 +16,40 @@ from routers.decks import MIN_USES_FOR_CARD_STAT
 
 router = APIRouter()
 CR_API_BASE = "https://api.clashroyale.com/v1"
+
+# Real fix (2026-09-07, "Player/Coach tabs take very long to load"): both
+# get_player() and get_battles() below made a live, UNCACHED call to
+# Supercell's own API on every single request -- confirmed via direct curl
+# timing against production (dns/tls all fast, ~0.1s; time-to-first-byte
+# alone varied 0.6s-5.5s run to run, same variance hitting the VM directly,
+# no Vercel/CORS involvement at all) that Supercell's own API has real,
+# wildly variable latency, and this app had zero buffer against it. A short
+# TTL cache absorbs that: repeat navigation (Player -> Coach handoff hits the
+# same tag twice within seconds) and re-visits within the window are now
+# fast, while still refreshing often enough to stay "real-time" for a stats
+# app (trophies/decks don't meaningfully change second-to-second). Bounded
+# size, not just TTL -- a past real OOM incident (see
+# battle_collector.py's _load_cache comments) was caused by an unbounded
+# growth pattern; this one evicts the oldest entry rather than growing
+# forever as more distinct player tags get looked up over time.
+_PLAYER_CACHE_TTL = 20
+_PLAYER_CACHE_MAX = 300
+_player_cache: dict[str, tuple[float, dict]] = {}
+_battles_cache: dict[str, tuple[float, dict]] = {}
+
+
+def _cache_get(store: dict, key: str):
+    entry = store.get(key)
+    if entry and time.time() - entry[0] < _PLAYER_CACHE_TTL:
+        return entry[1]
+    return None
+
+
+def _cache_set(store: dict, key: str, value: dict):
+    if len(store) >= _PLAYER_CACHE_MAX and key not in store:
+        oldest_key = min(store, key=lambda k: store[k][0])
+        del store[oldest_key]
+    store[key] = (time.time(), value)
 
 
 def get_api_key(authorization: str = Header(None)) -> str:
@@ -49,6 +84,10 @@ def search_players_endpoint(q: str = "", limit: int = 8):
 async def get_player(tag: str, authorization: str = Header(None)):
     api_key = get_api_key(authorization)
     tag = tag.lstrip("#").upper()
+
+    cached = _cache_get(_player_cache, tag)
+    if cached is not None:
+        return cached
 
     async with httpx.AsyncClient(timeout=10) as client:
         resp = await client.get(
@@ -211,7 +250,7 @@ async def get_player(tag: str, authorization: str = Header(None)):
     losses = data.get("losses", 0)
     total = wins + losses
 
-    return {
+    result = {
         "tag": f"#{tag}",
         "name": data.get("name"),
         "trophies": data.get("trophies"),
@@ -259,6 +298,8 @@ async def get_player(tag: str, authorization: str = Header(None)):
         # official name Supercell gives this season's arena tier.
         "seasonal_arena": _current_seasonal_arena(data.get("progress") or {}),
     }
+    _cache_set(_player_cache, tag, result)
+    return result
 
 
 def _current_seasonal_arena(progress: dict) -> dict | None:
@@ -302,6 +343,10 @@ def _tower_troop_name(side: dict) -> str | None:
 async def get_battles(tag: str, authorization: str = Header(None)):
     api_key = get_api_key(authorization)
     tag = tag.lstrip("#").upper()
+
+    cached = _cache_get(_battles_cache, tag)
+    if cached is not None:
+        return cached
 
     async with httpx.AsyncClient(timeout=10) as client:
         resp = await client.get(
@@ -375,7 +420,9 @@ async def get_battles(tag: str, authorization: str = Header(None)):
         })
 
     new_count = save_battles(tag, results)
-    return {"battles": results, "count": len(results), "newly_collected": new_count}
+    result = {"battles": results, "count": len(results), "newly_collected": new_count}
+    _cache_set(_battles_cache, tag, result)
+    return result
 
 
 @router.get("/{tag}/decks")

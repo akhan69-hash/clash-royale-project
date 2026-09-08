@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
@@ -25,43 +25,30 @@ type ViewMode = 'base' | 'evolved' | 'hero'
 // real win-rate number -- no charts, no tables, no per-arena/per-variant
 // breakdowns.
 //
-// REWORKED 2026-09-02 (real feedback): "when you're looking at a deck, when
-// you click the card... make it three d ish movable card when you're
-// scrolling or moving. And when you scroll down under it, you can see more
-// info, small lines of infos which are scrollable." The card art is now a
-// real, large, CSS-3D-tilting focal point (mouse-move-driven rotateX/
-// rotateY, snapping back on mouse-leave -- the CSS-tilt direction already
-// confirmed, not a Figma-authored asset) that stays fixed at the top of the
-// modal while everything else (name/type/stats/evolution details) lives in
-// its own independently scrollable panel underneath, instead of the whole
-// modal scrolling as one block.
-function TiltCard({ src, alt, rarityColor, contain }: { src?: string | null; alt: string; rarityColor: string; contain: boolean }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const [tilt, setTilt] = useState({ rx: 0, ry: 0 })
+// REMOVED 2026-09-08 (real feedback: "Remove the 3d tilt when clicking a
+// card, fix that make it less laggy"): this used to be TiltCard, a
+// mouse-move-driven rotateX/rotateY tilt. Real perf issue -- every single
+// mousemove event (fires dozens of times/sec) triggered a React state
+// update, which recomputed an inline boxShadow string (template-literal
+// color math) AND fought a `transition-transform duration-150` that kept
+// restarting mid-transition on each new value, on top of a second
+// mouse-position-driven radial-gradient recompute for the glare overlay.
+// That's a real, textbook unthrottled-mousemove jank pattern, not a vague
+// "feels laggy" -- removed entirely rather than throttled/rAF'd, since the
+// tilt wasn't the part of this modal real feedback was ever specifically
+// asking to keep once it become a comfort issue. Static, still large,
+// still real card art -- just no per-frame recomputation.
+function FocalCard({ src, alt, rarityColor, contain }: { src?: string | null; alt: string; rarityColor: string; contain: boolean }) {
   const [imgError, setImgError] = useState(false)
   useEffect(() => { setImgError(false) }, [src])
 
-  const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = ref.current?.getBoundingClientRect()
-    if (!rect) return
-    const px = (e.clientX - rect.left) / rect.width - 0.5
-    const py = (e.clientY - rect.top) / rect.height - 0.5
-    setTilt({ rx: py * -18, ry: px * 18 })
-  }
-  const onLeave = () => setTilt({ rx: 0, ry: 0 })
-
   return (
-    <div style={{ perspective: 700 }} className="mx-auto">
+    <div className="mx-auto">
       <div
-        ref={ref}
-        onMouseMove={onMove}
-        onMouseLeave={onLeave}
-        className="relative w-40 h-52 rounded-2xl overflow-hidden shadow-glow transition-transform duration-150 ease-out cursor-grab active:cursor-grabbing"
+        className="relative w-40 h-52 rounded-2xl overflow-hidden shadow-glow"
         style={{
-          transform: `rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg) scale(${tilt.rx || tilt.ry ? 1.04 : 1})`,
-          transformStyle: 'preserve-3d',
           border: `3px solid ${rarityColor}`,
-          boxShadow: `0 0 20px 2px ${rarityColor}70, ${tilt.ry * 0.6}px ${-tilt.rx * 0.6}px 24px rgba(0,0,0,0.5)`,
+          boxShadow: `0 0 20px 2px ${rarityColor}70`,
           background: `linear-gradient(160deg, ${rarityColor}22, ${rarityColor}55)`,
         }}
       >
@@ -71,13 +58,6 @@ function TiltCard({ src, alt, rarityColor, contain }: { src?: string | null; alt
           <img src={src} alt={alt} className={`w-full h-full ${contain ? 'object-contain' : 'object-cover'}`}
             onError={() => setImgError(true)} draggable={false} />
         )}
-        {/* Faint moving specular highlight, offset opposite the tilt -- sells
-            the "glossy card catching light" illusion without a real 3D
-            renderer. Purely decorative, pointer-events-none. */}
-        <div className="absolute inset-0 pointer-events-none"
-          style={{
-            background: `radial-gradient(circle at ${50 - tilt.ry * 2}% ${50 + tilt.rx * 2}%, rgba(255,255,255,0.16), transparent 55%)`,
-          }} />
       </div>
     </div>
   )
@@ -145,9 +125,8 @@ export default function CardDetailModal({ card, onClose }: Props) {
           {/* Fixed top section -- the real focal point now, not a small
               header thumbnail. Doesn't scroll with the info below it. */}
           <div className="p-5 pb-4 shrink-0 text-center">
-            <TiltCard src={headerImage} alt={card.name} rarityColor={rarityColor} contain={usingRealFrame} />
+            <FocalCard src={headerImage} alt={card.name} rarityColor={rarityColor} contain={usingRealFrame} />
             <h2 className="text-xl mt-3"><CardName name={card.name} rarity={card.rarity} /></h2>
-            <p className="text-text-muted text-xs mt-0.5">Tilt it -- move your cursor over the card.</p>
 
             {(card.has_evolution || card.has_hero) && (
               <div className="flex gap-1 justify-center mt-3">
