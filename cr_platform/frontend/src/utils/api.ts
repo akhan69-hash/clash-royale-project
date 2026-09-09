@@ -270,4 +270,8 @@ export const whatsNextApi = {
   get: () => api.get('/whats-next').then(r => r.data),
 }
 
+export const insightsApi = {
+  summary: (days = 30) => api.get('/insights/summary', { params: { days } }).then(r => r.data),
+}
+
 export default api

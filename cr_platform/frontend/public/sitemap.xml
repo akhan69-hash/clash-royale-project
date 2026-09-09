@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://royaleiq.com/</loc><priority>1.0</priority></url>
+  <url><loc>https://royaleiq.com/build</loc><priority>0.9</priority></url>
+  <url><loc>https://royaleiq.com/analytics</loc><priority>0.9</priority></url>
+  <url><loc>https://royaleiq.com/rankings</loc><priority>0.8</priority></url>
+  <url><loc>https://royaleiq.com/synergy</loc><priority>0.7</priority></url>
+  <url><loc>https://royaleiq.com/collection</loc><priority>0.7</priority></url>
+  <url><loc>https://royaleiq.com/coach</loc><priority>0.7</priority></url>
+  <url><loc>https://royaleiq.com/clans</loc><priority>0.6</priority></url>
+  <url><loc>https://royaleiq.com/player</loc><priority>0.6</priority></url>
+  <url><loc>https://royaleiq.com/news</loc><priority>0.5</priority></url>
+</urlset>

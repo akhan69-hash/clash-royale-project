@@ -23,6 +23,7 @@ const WhatsNextPage = lazy(() => import('./pages/WhatsNextPage'))
 const FavoritesPage = lazy(() => import('./pages/FavoritesPage'))
 const AuthPage = lazy(() => import('./pages/AuthPage'))
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
+const InsightsPage = lazy(() => import('./pages/InsightsPage'))
 import PageTransition from './components/PageTransition'
 import MegaMenu from './components/MegaMenu'
 import SideMenu from './components/SideMenu'
@@ -353,6 +354,9 @@ function AnimatedRoutes() {
         <Route path="/favorites" element={<PageTransition><FavoritesPage /></PageTransition>} />
         <Route path="/account" element={<PageTransition><AuthPage /></PageTransition>} />
         <Route path="/reset-password" element={<PageTransition><ResetPasswordPage /></PageTransition>} />
+        {/* Internal usage-analytics view (2026-09-08) -- deliberately not in
+            NAV_SECTIONS/the main nav, direct-URL only, see InsightsPage.tsx. */}
+        <Route path="/insights" element={<PageTransition><InsightsPage /></PageTransition>} />
         {/* Old routes redirect so existing bookmarks/links still work */}
         <Route path="/cards" element={<Navigate to="/build" replace />} />
         <Route path="/deck-lab" element={<Navigate to="/build" replace />} />

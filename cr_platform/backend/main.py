@@ -15,7 +15,7 @@ import uvicorn
 
 load_dotenv(Path(__file__).parent / ".env")  # CR_API_KEY for the auto-crawler, if present -- gitignored
 
-from routers import cards, players, decks, meta, synergy, ml, rankings, coaching, whats_next, health  # noqa: E402
+from routers import cards, players, decks, meta, synergy, ml, rankings, coaching, whats_next, health, insights  # noqa: E402
 from services import auto_crawler  # noqa: E402
 from services.battle_collector import get_collection_stats  # noqa: E402
 from services.activity_log import log_activity  # noqa: E402
@@ -115,6 +115,7 @@ app.include_router(rankings.router, prefix="/api/rankings", tags=["Rankings"])
 app.include_router(coaching.router, prefix="/api/coaching", tags=["Coaching"])
 app.include_router(whats_next.router, prefix="/api/whats-next", tags=["What's Next"])
 app.include_router(health.router, prefix="/api/health", tags=["Health"])
+app.include_router(insights.router, prefix="/api/insights", tags=["Insights"])
 
 
 @app.on_event("startup")
