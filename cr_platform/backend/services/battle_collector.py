@@ -484,6 +484,37 @@ def _archive_connect():
         # "IF NOT EXISTS" silently no-ops the second CREATE, uniqueness and
         # all, if the names don't produce compatible definitions.
         conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_archive_dedup ON battles(battle_time, team_tag, opponent_tag)")
+        # Real fix (2026-09-08, "make my search engine stronger and faster"):
+        # search_players() below used to only have _pg_search_players (fast,
+        # but Postgres's `battles` table is now a deliberately pruned RECENT
+        # WINDOW, see the tiered-storage comments elsewhere in this file) or
+        # this file's own full-history-but-unindexed CSV stream as a fallback
+        # (a real 41s worst case against production's size, per that
+        # function's own docstring). This archive has the FULL history (every
+        # accepted battle is dual-written here regardless of the Postgres
+        # path, see _append_csv) but until now only had team_tag indexed --
+        # opponent_tag and the two name columns (COLLATE NOCASE so a
+        # case-insensitive prefix LIKE can actually use the index, matching
+        # how every other comparison in this file already lowercases first)
+        # were missing entirely, meaning a name search or opponent-tag search
+        # here would ALSO be a full unindexed table scan. These four make
+        # _sqlite_search_players below a real indexed query on the full
+        # dataset instead of a tradeoff between speed and coverage.
+        # Real production finding (2026-09-08): the first version of these
+        # two name indexes covered team_name/opponent_name alone -- a real
+        # index seek (confirmed via EXPLAIN QUERY PLAN), but the query also
+        # needs to return team_tag/opponent_tag, which wasn't in the index,
+        # so every matching row needed a SEPARATE random lookup back into
+        # the base table. On this VM's actual disk I/O that measured 4-9s
+        # per search (vs. sub-100ms locally) -- hundreds of individual random
+        # reads add up fast on real (as opposed to locally-tested) storage.
+        # Including the tag column in the index too makes it a COVERING
+        # index -- the whole query is answered from the index alone, no
+        # base-table lookups at all, matching how idx_archive_team_tag/
+        # idx_archive_opponent_tag already behave for the tag-side tiers.
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_archive_opponent_tag ON battles(opponent_tag)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_archive_team_name_nocase ON battles(team_name COLLATE NOCASE, team_tag)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_archive_opponent_name_nocase ON battles(opponent_name COLLATE NOCASE, opponent_tag)")
         conn.commit()
         _archive_schema_ready = True
     return conn
@@ -587,6 +618,134 @@ def _escape_like(s: str) -> str:
     query containing a literal % or _ would be misinterpreted as a wildcard
     instead of matched literally."""
     return s.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
+def _sqlite_search_players(q: str, limit: int) -> list[dict]:
+    """Primary search path as of 2026-09-08 -- see search_players's docstring
+    for why this now runs before _pg_search_players. Same rank tiers (0=name
+    prefix, 1=tag prefix, 2=name substring, 3=tag substring) as both the
+    Postgres and legacy-scan versions.
+
+    Two SEPARATE queries (name tiers, tag tiers), not one combined UNION --
+    a real, confirmed-via-EXPLAIN-QUERY-PLAN constraint forced this split.
+    SQLite's LIKE case-sensitivity is controlled ONLY by the connection-wide
+    `case_sensitive_like` pragma (a per-comparison `COLLATE NOCASE` clause
+    only tells the query PLANNER it's safe to use a NOCASE index for range
+    pruning -- it does NOT restore case-insensitive matching once the
+    pragma is on, confirmed the hard way: turning the pragma on to unlock a
+    real index seek for the BINARY-collated tag columns silently broke name
+    matching too, since a mixed-case query no longer matched any name).
+    team_tag/opponent_tag need the pragma ON to get a real range-seek
+    (they're BINARY-collated with no NOCASE index, and every tag in this
+    app -- both stored and the q_tag below -- is already normalized
+    uppercase, so comparing case-sensitively loses nothing real); the two
+    name columns need it OFF (their own COLLATE NOCASE + the NOCASE indexes
+    from _archive_connect already gives them a real seek under the default
+    pragma state, confirmed separately). One connection, one pragma value
+    at a time -- so each pair of tiers runs as its own query, merged and
+    re-ranked in Python.
+
+    Deliberately NOT using an ESCAPE clause anywhere (unlike
+    _pg_search_players) -- confirmed via EXPLAIN QUERY PLAN that ANY ESCAPE
+    clause silently disables the LIKE-to-index-range optimization entirely,
+    which defeats the entire point of adding these indexes. The tradeoff: a
+    literal `%`/`_` typed into the search box acts as a wildcard instead of
+    a literal character (Supercell tags never contain either, and it's rare
+    in real display names) -- a real but minor and non-harmful loosening
+    (a few extra loosely-matching results, never wrong/missing data), worth
+    it for real index seeks on the common case."""
+    conn = _archive_connect()
+    try:
+        q_lower, q_tag = q.lower(), q.lstrip("#").upper()
+        name_prefix, tag_prefix = f"{q_lower}%", f"{q_tag}%"
+        name_contains, tag_contains = f"%{q_lower}%", f"%{q_tag}%"
+        pool = limit * 20
+
+        # Rank tiers 0/1 (prefix) are real index seeks -- always run, always
+        # fast. Tiers 2/3 (substring, `%x%`) can't use a B-tree index at all
+        # (no FTS5/trigram table exists here yet) -- worst case (few or no
+        # real substring matches anywhere in 6.3M+ rows) means scanning a
+        # large chunk of the whole table with nothing to stop early on,
+        # confirmed via direct timing (~1.4s) even though the LIMIT bounds
+        # ROWS RETURNED, not rows CHECKED. Real fix: only pay for that scan
+        # when the prefix tiers didn't already find enough on their own --
+        # the overwhelmingly common case for search-as-you-type. A query
+        # with truly no prefix match anywhere still hits the slow path, same
+        # as the old CSV-streaming version's documented worst case, just
+        # rarer now that prefix alone covers most real searches.
+        name_prefix_sql = """
+            SELECT tag, name, rnk FROM (
+                SELECT team_tag AS tag, team_name AS name, 0 AS rnk FROM battles
+                    WHERE team_name COLLATE NOCASE LIKE ? LIMIT ?)
+            UNION ALL
+            SELECT tag, name, rnk FROM (
+                SELECT opponent_tag AS tag, opponent_name AS name, 0 AS rnk FROM battles
+                    WHERE opponent_name COLLATE NOCASE LIKE ? LIMIT ?)
+        """
+        rows = list(conn.execute(name_prefix_sql, [name_prefix, pool, name_prefix, pool]).fetchall())
+
+        # Tag tiers -- pragma ON for these, see the docstring above for why.
+        conn.execute("PRAGMA case_sensitive_like = ON")
+        tag_prefix_sql = """
+            SELECT tag, name, rnk FROM (
+                SELECT team_tag AS tag, team_name AS name, 1 AS rnk FROM battles
+                    WHERE team_tag LIKE ? LIMIT ?)
+            UNION ALL
+            SELECT tag, name, rnk FROM (
+                SELECT opponent_tag AS tag, opponent_name AS name, 1 AS rnk FROM battles
+                    WHERE opponent_tag LIKE ? LIMIT ?)
+        """
+        rows += conn.execute(tag_prefix_sql, [tag_prefix, pool, tag_prefix, pool]).fetchall()
+
+        if len({r[0] for r in rows if r[0]}) < limit:
+            name_contains_sql = """
+                SELECT tag, name, rnk FROM (
+                    SELECT team_tag AS tag, team_name AS name, 2 AS rnk FROM battles
+                        WHERE team_name COLLATE NOCASE LIKE ? LIMIT ?)
+                UNION ALL
+                SELECT tag, name, rnk FROM (
+                    SELECT opponent_tag AS tag, opponent_name AS name, 2 AS rnk FROM battles
+                        WHERE opponent_name COLLATE NOCASE LIKE ? LIMIT ?)
+            """
+            # Pragma is still ON from the tag-prefix pass above -- harmless
+            # here too (COLLATE NOCASE on these still forces case-insensitive
+            # matching regardless, same override behavior noted above).
+            rows += conn.execute(name_contains_sql, [name_contains, pool, name_contains, pool]).fetchall()
+            tag_contains_sql = """
+                SELECT tag, name, rnk FROM (
+                    SELECT team_tag AS tag, team_name AS name, 3 AS rnk FROM battles
+                        WHERE team_tag LIKE ? LIMIT ?)
+                UNION ALL
+                SELECT tag, name, rnk FROM (
+                    SELECT opponent_tag AS tag, opponent_name AS name, 3 AS rnk FROM battles
+                        WHERE opponent_tag LIKE ? LIMIT ?)
+            """
+            rows += conn.execute(tag_contains_sql, [tag_contains, pool, tag_contains, pool]).fetchall()
+
+        # A tag can surface with a blank name from one row (e.g. the
+        # opponent-name field wasn't captured that battle) and a real name
+        # from another, and/or at more than one rank tier across the two
+        # passes above -- keep the best (lowest) rank and the first
+        # non-blank name seen per tag, same real-data quirk
+        # _pg_search_players's `max(name) FILTER`/`min(rnk)` handled in SQL,
+        # done here in Python since this is now two result sets to merge.
+        best_name: dict[str, str] = {}
+        order: list[str] = []
+        best_rank: dict[str, int] = {}
+        for tag, name, rnk in rows:
+            if not tag:
+                continue
+            if tag not in best_rank:
+                order.append(tag)
+                best_rank[tag] = rnk
+            elif rnk < best_rank[tag]:
+                best_rank[tag] = rnk
+            if name and tag not in best_name:
+                best_name[tag] = name
+        order.sort(key=lambda t: (best_rank[t], t))
+        return [{"tag": t, "name": best_name.get(t)} for t in order[:limit]]
+    finally:
+        conn.close()
 
 
 def _pg_search_players(conn, q: str, limit: int) -> list[dict]:
@@ -718,15 +877,29 @@ def search_players(query: str, limit: int = 8) -> list[dict]:
     (uppercased, matching how Supercell tags are always stored).
 
     RESOLVED 2026-08-28: the fix flagged above -- "a real fix needs a real
-    index" -- is now live. See _pg_search_players: when SUPABASE_DB_URL is
-    configured, search goes straight to an indexed Postgres query instead of
-    streaming the file, so match depth/cold-cache flakiness ("shows up after
-    a while") is gone for anyone whose battles have been migrated. The
-    file-streaming path below now only runs as a fallback when Postgres
-    isn't configured (e.g. local dev)."""
+    index" -- went live via _pg_search_players.
+
+    SUPERSEDED 2026-09-08 ("make my search engine stronger and faster"):
+    that Postgres path has a real coverage gap now that the tiered-storage
+    work (see this file's ARCHIVE_DB_PATH comments) turned Postgres's own
+    `battles` table into a deliberately pruned RECENT-WINDOW-ONLY table --
+    a player whose battles have aged out of that window became invisible to
+    search even though their full history was sitting right there in the
+    local SQLite archive the whole time. _sqlite_search_players is now tried
+    FIRST: same rank-tiered indexed-query approach as _pg_search_players,
+    against the archive's full, never-pruned history (every accepted battle
+    is dual-written there regardless of the Postgres path -- see
+    _append_csv), now that idx_archive_opponent_tag/team_name_nocase/
+    opponent_name_nocase exist to actually back it with real indexes instead
+    of a table scan. Postgres and the raw CSV stream stay as fallbacks, in
+    that order, for the edge case where the archive file itself doesn't
+    exist yet (e.g. a brand new environment before its first battle)."""
     q = query.strip()
     if len(q) < 2:
         return []
+
+    if ARCHIVE_DB_PATH.exists():
+        return _sqlite_search_players(q, limit)
 
     conn = _pg_connect()
     if conn is not None:

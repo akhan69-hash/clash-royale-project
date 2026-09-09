@@ -75,6 +75,18 @@ def main():
     # slower than one pass at the end.
     print("Building the real team_tag lookup index...")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_archive_team_tag ON battles(team_tag)")
+    # Search-support indexes (2026-09-08, "make my search engine stronger and
+    # faster") -- must match battle_collector.py's _archive_connect exactly,
+    # see its comment for why opponent_tag and the two NOCASE name indexes
+    # exist. Built here too, post-bulk-load like the index above, so a fresh
+    # backfill run gets full search support immediately instead of paying
+    # for it on the app's first live search after deploy.
+    print("Building the real search-support indexes...")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_archive_opponent_tag ON battles(opponent_tag)")
+    # Composite/covering -- see battle_collector.py's _archive_connect for
+    # why the tag column is included (avoids a base-table lookup per match).
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_archive_team_name_nocase ON battles(team_name COLLATE NOCASE, team_tag)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_archive_opponent_name_nocase ON battles(opponent_name COLLATE NOCASE, opponent_tag)")
     conn.commit()
 
     cur = conn.execute("SELECT count(*) FROM battles")
