@@ -26,3 +26,8 @@ data/card_reference.csv.bak
 # these had accumulated across this project's history from local restarts,
 # none ever meant to be source-controlled; deleted and ignored going forward.
 *.log
+
+# local SQLite personal-data archive -- never committed, lives on the VM's disk only
+data/battles_archive.db
+data/battles_archive.db-wal
+data/battles_archive.db-shm

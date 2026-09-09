@@ -140,7 +140,7 @@ function MetaTab() {
   const [page, setPage] = useState(1)
   const { openCard } = useCardDetail()
 
-  const { data: cardsData, isLoading } = useQuery({
+  const { data: cardsData, isLoading, isError } = useQuery({
     queryKey: ['meta-cards', sortBy],
     queryFn: () => metaApi.topCards(sortBy, 200),
   })
@@ -171,6 +171,15 @@ function MetaTab() {
 
       {isLoading ? (
         <div className="h-64 bg-bg-surface rounded-xl animate-pulse mb-8" />
+      ) : isError ? (
+        // Real bug fixed (2026-09-09): a failed request used to fall through
+        // to the "not enough collected battles" branch below (cardsData is
+        // undefined either way), which is honestly misleading -- there's
+        // real data, the request just failed. Says so plainly instead.
+        <div className="bg-bg-surface border border-danger/30 rounded-xl p-6 text-center mb-8">
+          <p className="text-text-primary text-sm font-medium mb-1">Couldn&apos;t load the live meta right now.</p>
+          <p className="text-text-muted text-xs">This is a real request failure, not a lack of data — try refreshing.</p>
+        </div>
       ) : cardsData?.cards?.length > 0 ? (
         <div className="bg-bg-surface border border-cyan-400/30 rounded-xl p-4 mb-8">
           <p className="text-text-muted text-xs mb-2">

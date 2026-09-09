@@ -949,37 +949,61 @@ def search_players(query: str, limit: int = 8) -> list[dict]:
 
 
 def _pg_collection_stats(conn) -> dict:
-    try:
-        with conn:
-            with conn.cursor() as cur:
-                cur.execute("""
-                    SELECT count(*), count(DISTINCT team_tag), count(DISTINCT opponent_tag),
-                           min(battle_time), max(battle_time)
-                    FROM battles
-                """)
-                total, unique_players, unique_opponents, earliest, latest = cur.fetchone()
-                cur.execute("""
-                    SELECT count(*) FROM (
-                        SELECT team_cards AS d FROM battles WHERE cardinality(team_cards) = 8
-                        UNION
-                        SELECT opponent_cards FROM battles WHERE cardinality(opponent_cards) = 8
-                    ) t
-                """)
-                unique_decks = cur.fetchone()[0]
-    finally:
-        conn.close()
+    """Real production incident (2026-09-09): this used to run
+    count(DISTINCT team_tag)/count(DISTINCT opponent_tag) plus a full
+    8-card-array dedup UNION against the ENTIRE retained Postgres window.
+    That window is a bounded recent slice on purpose (see prune_battles.sh)
+    but its absolute size keeps growing as real daily traffic grows (303MB
+    -> 423MB -> 511MB over 3 real days) -- large enough now that these two
+    full-scan aggregates started exceeding Supabase's statement timeout,
+    throwing psycopg2.errors.QueryCanceled uncaught, which 500'd the whole
+    /api/meta/cards endpoint (collection stats are fetched before the
+    actual card data). Two real fixes, not one:
+      1. Scope both expensive aggregates to a short recent slice
+         (RECENT_STATS_WINDOW) instead of the full retained window -- for
+         a "how many unique players/decks lately" display number, a day's
+         worth is just as honest as five, and is a fraction of the rows to
+         scan.
+      2. Never let this specific query take the whole endpoint down --
+         caught below in _compute_collection_stats, which falls back to
+         the last good cached value (or honest nulls) instead of raising.
+    """
+    # No more unscoped count(*)/min/max against the full retained table --
+    # total_battles/earliest/latest are already sourced from the lifetime
+    # tracker one level up (_compute_collection_stats), which is cheap and
+    # authoritative (the real, full history, not just whatever's currently
+    # retained). Running a redundant full-table scan for numbers that get
+    # overwritten anyway was pure wasted load -- exactly the kind of
+    # scan that was timing out.
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute("SET LOCAL statement_timeout = 5000")  # fail fast, don't tie up a pool slot indefinitely
+            cur.execute("""
+                SELECT count(DISTINCT team_tag), count(DISTINCT opponent_tag)
+                FROM battles
+                WHERE collected_at > now() - interval '1 day'
+            """)
+            unique_players, unique_opponents = cur.fetchone()
+            cur.execute("""
+                SELECT count(*) FROM (
+                    SELECT team_cards AS d FROM battles
+                        WHERE cardinality(team_cards) = 8 AND collected_at > now() - interval '1 day'
+                    UNION
+                    SELECT opponent_cards FROM battles
+                        WHERE cardinality(opponent_cards) = 8 AND collected_at > now() - interval '1 day'
+                ) t
+            """)
+            unique_decks = cur.fetchone()[0]
     return {
-        "total_battles": total,
         "unique_players": unique_players,
         "unique_opponents": unique_opponents,
         "unique_decks_seen": unique_decks,
-        "earliest": earliest.isoformat() if earliest else None,
-        "latest": latest.isoformat() if latest else None,
     }
 
 
 _collection_stats_cache: dict = {"value": None, "fetched_at": 0.0}
 _COLLECTION_STATS_TTL = 60  # seconds
+_collection_stats_lock = threading.Lock()
 
 def get_collection_stats() -> dict:
     """Real production incident (2026-09-05/06): callers (routers/meta.py,
@@ -989,20 +1013,59 @@ def get_collection_stats() -> dict:
     into hundreds of repeated failures once the database's disk filled up
     (every hit re-ran and re-failed it). A 60s TTL cache here, shared by
     every caller, stops that amplification without making the displayed
-    totals meaningfully stale for what's just a dashboard summary."""
+    totals meaningfully stale for what's just a dashboard summary.
+
+    SECOND real incident (2026-09-09): this cache had no lock -- the exact
+    same "missing lock around a cache rebuild" bug already hit once before
+    in _load_cache() (see that function's own incident comments). Under
+    real concurrent traffic, multiple requests could each see an expired
+    cache at once and each kick off their OWN slow Postgres query in
+    parallel, multiplying real DB load until Supabase's connection pool
+    itself ran out (confirmed live: ECHECKOUTTIMEOUT). Double-checked
+    locking below means only ONE request ever actually recomputes; every
+    other concurrent caller just waits on the lock and then reads the
+    result the first one produced, instead of piling on its own query."""
     now = time.monotonic()
-    if _collection_stats_cache["value"] is None or now - _collection_stats_cache["fetched_at"] > _COLLECTION_STATS_TTL:
-        _collection_stats_cache["value"] = _compute_collection_stats()
-        _collection_stats_cache["fetched_at"] = now
-    return _collection_stats_cache["value"]
+    if _collection_stats_cache["value"] is not None and now - _collection_stats_cache["fetched_at"] <= _COLLECTION_STATS_TTL:
+        return _collection_stats_cache["value"]
+    with _collection_stats_lock:
+        now = time.monotonic()
+        if _collection_stats_cache["value"] is None or now - _collection_stats_cache["fetched_at"] > _COLLECTION_STATS_TTL:
+            _collection_stats_cache["value"] = _compute_collection_stats()
+            _collection_stats_cache["fetched_at"] = now
+        return _collection_stats_cache["value"]
+
+
+def _stale_collection_stats() -> dict:
+    """Real fallback (2026-09-09): the last good cached unique-player/deck
+    counts, or honest nulls if there's never been a successful one yet --
+    used whenever Postgres itself is unreachable/failing, so a real
+    Supabase-side problem degrades this one dashboard stat instead of
+    500ing the whole /api/meta/cards endpoint (confirmed live: a
+    connection-pool/instance-level slowdown severe enough that a bare
+    SELECT 1 took 27s -- not something scoping our own queries can fix)."""
+    stale = _collection_stats_cache["value"]
+    if stale:
+        return {k: v for k, v in stale.items() if k in ("unique_players", "unique_opponents", "unique_decks_seen")}
+    return {"unique_players": None, "unique_opponents": None, "unique_decks_seen": None}
 
 
 def _compute_collection_stats() -> dict:
     lifetime = _read_lifetime_totals()
 
-    conn = _pg_connect()
-    if conn is not None:
-        stats = _pg_collection_stats(conn)
+    pg_configured = _pg_url() is not None
+    if pg_configured:
+        # Wraps BOTH the connect and the query -- a prior version only
+        # wrapped the query, so a slow/failing CONNECT still raised straight
+        # through uncaught.
+        try:
+            conn = _pg_connect()
+            try:
+                stats = _pg_collection_stats(conn)
+            finally:
+                conn.close()
+        except Exception:
+            stats = _stale_collection_stats()
     else:
         cache = _load_cache()
         stats = {

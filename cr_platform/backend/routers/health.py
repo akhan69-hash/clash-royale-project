@@ -90,9 +90,16 @@ def data_health():
         else:
             scale = f"{battles} battles"
 
+        # Real bug fixed (2026-09-09): players/decks can now honestly be
+        # None (get_collection_stats' new graceful fallback when Postgres
+        # itself is unreachable/degraded, rather than raising) -- f"{None:,}"
+        # is a real TypeError, which is exactly what took this whole
+        # endpoint down right after that fallback started actually firing.
+        players_str = f"{players:,}" if players is not None else "an unknown number of"
+        decks_str = f"{decks:,}" if decks is not None else "an unknown number of"
         summary = (
-            f"Analyzed {scale} from {players:,} players, "
-            f"{decks:,} unique decks. "
+            f"Analyzed {scale} from {players_str} players, "
+            f"{decks_str} unique decks. "
         )
 
         # Check freshness
