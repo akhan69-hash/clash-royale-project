@@ -161,10 +161,19 @@ function MetaTab() {
         </div>
       </div>
       {cardsData?.collection && (
+        // Real fixes (2026-09-11): unique_players/unique_opponents used to be
+        // two separate distinct counts (team-tag side vs opponent-tag side)
+        // added together for a "total players seen" figure -- now that both
+        // sides are merged into one real all-time set server-side (see
+        // _archive_collection_stats), they're the SAME number, so adding
+        // them just double-counted. Also, `null + null` is a real JavaScript
+        // footgun -- it silently evaluates to `0`, which is exactly why a
+        // genuinely degraded/unavailable stat was showing as a misleading
+        // "0 players seen" instead of an honest "—".
         <p className="text-text-secondary text-xs mb-3">
           {cardsData.collection.total_battles.toLocaleString()} real battles collected ·{' '}
-          {cardsData.collection.unique_players + cardsData.collection.unique_opponents} players seen ·{' '}
-          {cardsData.collection.unique_decks_seen?.toLocaleString()} unique decks seen ·{' '}
+          {cardsData.collection.unique_players?.toLocaleString() ?? '—'} players seen ·{' '}
+          {cardsData.collection.unique_decks_seen?.toLocaleString() ?? '—'} unique decks seen ·{' '}
           {cardsData.collection.earliest?.slice(0, 8)}–{cardsData.collection.latest?.slice(0, 8)}
         </p>
       )}

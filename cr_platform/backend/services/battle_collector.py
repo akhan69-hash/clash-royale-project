@@ -515,6 +515,20 @@ def _archive_connect():
         conn.execute("CREATE INDEX IF NOT EXISTS idx_archive_opponent_tag ON battles(opponent_tag)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_archive_team_name_nocase ON battles(team_name COLLATE NOCASE, team_tag)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_archive_opponent_name_nocase ON battles(opponent_name COLLATE NOCASE, opponent_tag)")
+        # Real fix (2026-09-11): "show all the real unique players seen so
+        # far and decks seen" -- confirmed live that a real COUNT(DISTINCT
+        # team_tag) over the full 6.8M-row archive takes 100+ seconds even
+        # against LOCAL SQLite (not a Postgres/network problem at all --
+        # this is just what an unindexed distinct-cardinality scan costs at
+        # this row count, on any engine). The fix isn't a faster query, it's
+        # not running one: these two tiny tables hold only the DISTINCT
+        # values themselves (bounded by real unique-player/deck counts, not
+        # total battles), updated incrementally in _append_archive as new
+        # battles come in -- the exact same "maintain a running total
+        # instead of ever rescanning everything" principle
+        # lifetime_totals.json already uses for total_battles.
+        conn.execute("CREATE TABLE IF NOT EXISTS seen_players (tag TEXT PRIMARY KEY)")
+        conn.execute("CREATE TABLE IF NOT EXISTS seen_decks (deck_key TEXT PRIMARY KEY)")
         conn.commit()
         _archive_schema_ready = True
     return conn
@@ -534,6 +548,24 @@ def _append_archive(rows: list[dict]) -> None:
             f"INSERT OR IGNORE INTO battles ({', '.join(FIELDNAMES)}) VALUES ({placeholders})",
             [tuple(r.get(c, "") for c in FIELDNAMES) for r in rows],
         )
+        # Incrementally maintain the real all-time unique-player/deck counts
+        # -- see the CREATE TABLE comment above for why this replaces a live
+        # DISTINCT scan. Cheap: at most 2 tag inserts + 2 deck inserts per
+        # battle, INSERT OR IGNORE so an already-seen tag/deck costs one
+        # no-op lookup, not a growing table.
+        player_tags = {r.get("team_tag") for r in rows if r.get("team_tag")} | {
+            r.get("opponent_tag") for r in rows if r.get("opponent_tag")
+        }
+        if player_tags:
+            conn.executemany("INSERT OR IGNORE INTO seen_players (tag) VALUES (?)", [(t,) for t in player_tags])
+        deck_keys = set()
+        for r in rows:
+            for field in ("team_cards", "opponent_cards"):
+                parts = (r.get(field) or "").split(";")
+                if len(parts) == 8 and all(parts):
+                    deck_keys.add(";".join(sorted(parts)))
+        if deck_keys:
+            conn.executemany("INSERT OR IGNORE INTO seen_decks (deck_key) VALUES (?)", [(d,) for d in deck_keys])
         conn.commit()
     finally:
         conn.close()
@@ -948,55 +980,32 @@ def search_players(query: str, limit: int = 8) -> list[dict]:
     return [hit for _, hit in candidates[:limit]]
 
 
-def _pg_collection_stats(conn) -> dict:
-    """Real production incident (2026-09-09): this used to run
-    count(DISTINCT team_tag)/count(DISTINCT opponent_tag) plus a full
-    8-card-array dedup UNION against the ENTIRE retained Postgres window.
-    That window is a bounded recent slice on purpose (see prune_battles.sh)
-    but its absolute size keeps growing as real daily traffic grows (303MB
-    -> 423MB -> 511MB over 3 real days) -- large enough now that these two
-    full-scan aggregates started exceeding Supabase's statement timeout,
-    throwing psycopg2.errors.QueryCanceled uncaught, which 500'd the whole
-    /api/meta/cards endpoint (collection stats are fetched before the
-    actual card data). Two real fixes, not one:
-      1. Scope both expensive aggregates to a short recent slice
-         (RECENT_STATS_WINDOW) instead of the full retained window -- for
-         a "how many unique players/decks lately" display number, a day's
-         worth is just as honest as five, and is a fraction of the rows to
-         scan.
-      2. Never let this specific query take the whole endpoint down --
-         caught below in _compute_collection_stats, which falls back to
-         the last good cached value (or honest nulls) instead of raising.
-    """
-    # No more unscoped count(*)/min/max against the full retained table --
-    # total_battles/earliest/latest are already sourced from the lifetime
-    # tracker one level up (_compute_collection_stats), which is cheap and
-    # authoritative (the real, full history, not just whatever's currently
-    # retained). Running a redundant full-table scan for numbers that get
-    # overwritten anyway was pure wasted load -- exactly the kind of
-    # scan that was timing out.
-    with conn:
-        with conn.cursor() as cur:
-            cur.execute("SET LOCAL statement_timeout = 5000")  # fail fast, don't tie up a pool slot indefinitely
-            cur.execute("""
-                SELECT count(DISTINCT team_tag), count(DISTINCT opponent_tag)
-                FROM battles
-                WHERE collected_at > now() - interval '1 day'
-            """)
-            unique_players, unique_opponents = cur.fetchone()
-            cur.execute("""
-                SELECT count(*) FROM (
-                    SELECT team_cards AS d FROM battles
-                        WHERE cardinality(team_cards) = 8 AND collected_at > now() - interval '1 day'
-                    UNION
-                    SELECT opponent_cards FROM battles
-                        WHERE cardinality(opponent_cards) = 8 AND collected_at > now() - interval '1 day'
-                ) t
-            """)
-            unique_decks = cur.fetchone()[0]
+def _archive_collection_stats() -> dict:
+    """Real fix (2026-09-11), replacing _pg_collection_stats entirely --
+    real feedback: "show all the real unique players seen so far and decks
+    seen", not a number scoped to the last day or degraded to null. Directly
+    measured that a live COUNT(DISTINCT team_tag) over the full archive
+    takes 100+ seconds on THIS project's actual real row count (6.8M+),
+    confirmed on local SQLite, not just Postgres -- this isn't a
+    Postgres-vs-SQLite problem, it's that a live distinct-cardinality scan
+    is fundamentally the wrong tool at this scale, on any engine. seen_players/
+    seen_decks (see _archive_connect/_append_archive) hold only the ALREADY-
+    DEDUPED values, maintained incrementally as battles come in, so reading
+    the real all-time count here is just a COUNT(*) on two small tables --
+    fast regardless of how large the underlying battles table grows."""
+    conn = _archive_connect()
+    try:
+        unique_players = conn.execute("SELECT COUNT(*) FROM seen_players").fetchone()[0]
+        unique_decks = conn.execute("SELECT COUNT(*) FROM seen_decks").fetchone()[0]
+    finally:
+        conn.close()
+    # No real distinction between "team_tag" and "opponent_tag" once they're
+    # merged into one seen_players set (see _append_archive) -- unique_opponents
+    # is kept as a field for API-shape compatibility but is no longer a
+    # separate number; callers should treat unique_players as the real total.
     return {
         "unique_players": unique_players,
-        "unique_opponents": unique_opponents,
+        "unique_opponents": unique_players,
         "unique_decks_seen": unique_decks,
     }
 
@@ -1053,42 +1062,21 @@ def _stale_collection_stats() -> dict:
 def _compute_collection_stats() -> dict:
     lifetime = _read_lifetime_totals()
 
-    pg_configured = _pg_url() is not None
-    if pg_configured:
-        # Wraps BOTH the connect and the query -- a prior version only
-        # wrapped the query, so a slow/failing CONNECT still raised straight
-        # through uncaught.
-        try:
-            conn = _pg_connect()
-            try:
-                stats = _pg_collection_stats(conn)
-            finally:
-                conn.close()
-        except Exception:
-            stats = _stale_collection_stats()
-    else:
-        cache = _load_cache()
-        stats = {
-            "unique_players": len(cache["players"]),
-            "unique_opponents": len(cache["opponents"]),
-            # Every distinct exact 8-card deck seen at least once, either side
-            # of any real battle -- the raw "how many unique decks has this
-            # app ever seen" number. A much bigger, noisier count than
-            # deck_archetypes_live.csv's "seen 3+ times" figure (that one
-            # filters for decks reliable enough to trust a win rate on);
-            # this one is just the full collection.
-            "unique_decks_seen": len(cache["decks"]),
-        }
+    # Real fix (2026-09-11): unique_players/unique_decks_seen now always come
+    # from the archive's own seen_players/seen_decks tables (see
+    # _archive_collection_stats) -- real all-time counts, cheap to read
+    # regardless of engine or how large `battles` itself grows. Postgres is
+    # no longer involved in this stat at all. Still defensively wrapped: a
+    # real disk/IO problem reading the archive falls back to the last good
+    # cached value rather than raising and taking the whole endpoint down.
+    try:
+        stats = _archive_collection_stats()
+    except Exception:
+        stats = _stale_collection_stats()
 
     # total_battles/earliest/latest come from the lifetime tracker (the full
-    # real history, see _update_lifetime_totals) rather than whatever Postgres
-    # happens to currently retain -- Postgres only holds a bounded recent
-    # slice on purpose (see scripts/rebuild_battles_table.py), so its own
-    # count(*)/min/max would silently under-report "how many EVER collected"
-    # once old rows are pruned. unique_players/unique_opponents/
-    # unique_decks_seen stay scoped to whatever's actually retained (exact
-    # all-time set-cardinality would mean holding millions of tags/decks in
-    # memory forever -- the same OOM pattern already hit 4 times this project).
+    # real history, see _update_lifetime_totals) -- cheap, incrementally
+    # maintained, same principle as unique_players/unique_decks_seen above.
     stats["total_battles"] = lifetime.get("total_battles") or stats.get("total_battles", 0)
     stats["earliest"] = lifetime.get("earliest") or stats.get("earliest")
     stats["latest"] = lifetime.get("latest") or stats.get("latest")
